@@ -12,15 +12,15 @@
           }
         }
       ],
-      "destination": "https://codehub-api.onrender.com/share/:username"
+      "destination": "https://codehub-api-bsmg.onrender.com/share/:username"
     },
     {
       "source": "/api/:path*",
-      "destination": "https://codehub-api.onrender.com/api/:path*"
+      "destination": "https://codehub-api-bsmg.onrender.com/api/:path*"
     },
     {
       "source": "/share/:path*",
-      "destination": "https://codehub-api.onrender.com/share/:path*"
+      "destination": "https://codehub-api-bsmg.onrender.com/share/:path*"
     },
     {
       "source": "/(.*)",
