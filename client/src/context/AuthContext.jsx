@@ -31,7 +31,10 @@ export const AuthProvider = ({ children }) => {
         throw error;
       }
     },
-    retry: false,
+    // A 401 is a real answer ("guest"). A timeout or 5xx is not: retry those,
+    // otherwise a signed-in user looks logged out while the server wakes up.
+    retry: (failureCount, error) =>
+      failureCount < 2 && (error?.isNetworkError || (error?.status ?? 0) >= 500),
     staleTime: 5 * 60 * 1000,
   });
 

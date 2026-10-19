@@ -6,6 +6,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 
 import CommandPalette from '../common/CommandPalette.jsx';
 import ErrorBoundary from '../common/ErrorBoundary.jsx';
+import ServerWakeNotice from '../common/ServerWakeNotice.jsx';
 import Footer from './Footer.jsx';
 import { BrandLink, SidebarContent } from './Sidebar.jsx';
 
@@ -43,6 +44,7 @@ export const AppLayout = () => {
         <main id="main-content" className="flex-1">
           {page}
         </main>
+        <ServerWakeNotice />
       </div>
     );
   }
@@ -115,6 +117,7 @@ export const AppLayout = () => {
       </div>
 
       <CommandPalette open={searchOpen} onOpenChange={setSearchOpen} />
+      <ServerWakeNotice />
     </div>
   );
 };

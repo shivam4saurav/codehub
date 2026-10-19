@@ -42,6 +42,20 @@ const schema = z.object({
   CLIENT_URL: z.string().default('http://localhost:5173'),
   SERVER_URL: z.string().default('http://localhost:5000'),
 
+  /**
+   * How many proxies sit in front of Express. Render alone is 1 (the default
+   * in production). Vercel forwarding to Render is 2, otherwise every visitor
+   * would appear to come from Vercel's IP and share one rate-limit bucket.
+   */
+  TRUST_PROXY: z
+    .string()
+    .optional()
+    .transform((value) => (value === undefined || value.trim() === '' ? undefined : Number(value)))
+    .refine(
+      (value) => value === undefined || (Number.isInteger(value) && value >= 0 && value <= 5),
+      'must be a whole number from 0 to 5',
+    ),
+
   MONGODB_URI: isTest
     ? z.string().optional().transform((v) => v || 'mongodb://127.0.0.1:27017/codehub-test')
     : z.string({ error: 'is required' }).min(1),

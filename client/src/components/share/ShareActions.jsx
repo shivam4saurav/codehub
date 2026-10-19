@@ -69,7 +69,8 @@ export const ShareActions = ({ username, cardRef, displayName, summary }) => {
     {
       label: 'LinkedIn',
       icon: LinkedInGlyph,
-      // LinkedIn reads og:* from the URL, which /share/:username provides.
+      // LinkedIn's crawler fetches /u/:username; vercel.json (or Express, on a
+      // single-service deploy) hands crawlers the meta-tagged /share/:username.
       href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(profileUrl)}`,
     },
     {

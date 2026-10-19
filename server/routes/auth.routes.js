@@ -9,7 +9,7 @@ import {
   updatePassword,
 } from '../controllers/auth.controller.js';
 import authenticate from '../middleware/authenticate.js';
-import { authLimiter, registerLimiter } from '../middleware/rateLimiters.js';
+import { authLimiter, loginAccountLimiter, registerLimiter } from '../middleware/rateLimiters.js';
 import validate from '../middleware/validate.js';
 import {
   changePasswordSchema,
@@ -20,7 +20,7 @@ import {
 const router = Router();
 
 router.post('/register', registerLimiter, validate({ body: registerSchema }), register);
-router.post('/login', authLimiter, validate({ body: loginSchema }), login);
+router.post('/login', authLimiter, loginAccountLimiter, validate({ body: loginSchema }), login);
 router.post('/refresh', refresh);
 router.post('/logout', logout);
 router.get('/me', authenticate, me);

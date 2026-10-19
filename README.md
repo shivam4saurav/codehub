@@ -571,72 +571,94 @@ real.
 
 ## Deployment
 
-### Database — MongoDB Atlas
+The recommended setup is **Vercel for the frontend and Render for the API**, with Vercel forwarding
+`/api/*` to Render. The browser only ever talks to the Vercel address, so the login cookies are
+first-party and work in every browser, including Safari and iOS. Pointing the frontend straight at
+`onrender.com` instead would make them third-party cookies, which Safari, Brave and Chrome Incognito
+block.
 
-1. Create a free M0 cluster.
-2. Add a database user, and allow your backend's IP (or `0.0.0.0/0` for a demo).
+```text
+browser ──▶ your-app.vercel.app ──┬─ /, /practice, /u/... ─▶ static React build
+                                  ├─ /api/*, /share/*      ─▶ codehub-api.onrender.com
+                                  └─ /u/:username (bots)   ─▶ codehub-api.onrender.com/share/:username
+```
+
+All of this routing lives in [`client/vercel.json`](client/vercel.json).
+
+### 1. Database — MongoDB Atlas
+
+1. Create a free M0 cluster and a database user.
+2. Network Access: Render's free plan has no fixed outbound IP, so allow `0.0.0.0/0`. The database
+   is then protected by its username and password only.
 3. Copy the connection string into `MONGODB_URI`, including the database name.
 
 Indexes are created automatically at boot in production (`syncIndexes()`).
 
-### Backend — Render (or Railway)
+### 2. API — Render (web service)
 
 | Setting | Value |
 | --- | --- |
 | Root directory | `server` |
-| Build command | `npm install` |
+| Build command | `npm ci --workspace=server` |
 | Start command | `npm start` |
 | Health check path | `/api/health` |
 
-Environment variables to set:
+Environment variables:
 
 ```bash
 NODE_ENV=production
+NODE_VERSION=22
 MONGODB_URI=<atlas uri>
-JWT_ACCESS_SECRET=<random>
-JWT_REFRESH_SECRET=<random>
-CLIENT_URL=https://your-app.vercel.app
-SERVER_URL=https://your-api.onrender.com
+JWT_ACCESS_SECRET=<random, 32+ chars>      # openssl rand -hex 32
+JWT_REFRESH_SECRET=<different random>
+CLIENT_URL=https://your-app.vercel.app     # exact production address; used for CORS and CSRF checks
+SERVER_URL=https://codehub-api.onrender.com
 COOKIE_SECURE=true
-COOKIE_SAMESITE=none      # required for cross-domain cookies
+COOKIE_SAMESITE=lax                        # same-site thanks to the Vercel proxy
+TRUST_PROXY=2                              # Vercel + Render's balancer, so rate limits see the visitor's IP
 ENABLE_CRON=true
+CLIST_USERNAME=... / CLIST_API_KEY=...     # optional, for LeetCode and CodeChef contests
 ```
 
-> On Render's free tier the instance sleeps when idle, which pauses cron jobs. For reliable reminder
-> delivery use a paid instance or an external scheduler that pings the service.
+Render's free instance sleeps after 15 idle minutes and takes about a minute to wake. The client
+waits up to 90 seconds and shows a "waking up the server" notice meanwhile. Cron jobs (contest
+sync, reminder emails) pause while it sleeps; use a paid instance or an uptime pinger if reminders
+must be reliable.
 
-### Frontend — Vercel (or Netlify)
+`TRUST_PROXY=2` trusts the IP that Vercel forwards. Someone calling `onrender.com` directly could
+fake that header to dodge the per-IP limits, so failed logins are also limited per account.
+
+### 3. Frontend — Vercel
 
 | Setting | Value |
 | --- | --- |
 | Root directory | `client` |
+| Framework preset | Vite |
 | Build command | `npm run build` |
 | Output directory | `dist` |
-| Environment | `VITE_API_URL=https://your-api.onrender.com` |
+| Environment variables | none (leave `VITE_API_URL` unset) |
 
-Add an SPA rewrite so deep links such as `/u/username` resolve:
-
-```json
-{ "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }] }
-```
+Before deploying, set the Render address in the three `destination` fields of
+`client/vercel.json` if your service is not called `codehub-api`.
 
 ### Single-service alternative
 
-Build the client and let Express serve it — `server/app.js` picks up `client/dist` automatically,
-including redirecting crawlers from `/u/:username` to the meta-tagged `/share/:username`:
+Express can also serve the built client itself (`server/app.js` picks up `client/dist`
+automatically, including the crawler redirect for `/u/:username`):
 
 ```bash
 npm run build && npm start
 ```
 
-This avoids cross-domain cookies entirely (`COOKIE_SAMESITE=lax` is then fine).
-
 ### Social previews
 
-Share the human link `https://your-app.vercel.app/u/username`. Crawlers that cannot run JavaScript
-are served `https://your-api.onrender.com/share/username`, which returns the correct `og:*` and
-`twitter:*` tags plus the server-rendered card image. Test with LinkedIn's Post Inspector or
-`curl -A "facebookexternalhit/1.1" https://your-api.onrender.com/share/username`.
+Share `https://your-app.vercel.app/u/username`. Link-preview bots (LinkedIn, X, WhatsApp, Slack,
+Discord) are routed to `/share/username`, which returns per-user `og:*` and `twitter:*` tags and the
+server-rendered card image. Check with LinkedIn's Post Inspector or:
+
+```bash
+curl -A "LinkedInBot/1.0" https://your-app.vercel.app/u/username
+```
 
 ---
 

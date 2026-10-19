@@ -1,0 +1,30 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/u/:username",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": {
+            "re": ".*(bot|Bot|BOT|crawler|Crawler|spider|Spider|facebookexternalhit|Facebot|WhatsApp|Embedly|Iframely|Preview|preview).*"
+          }
+        }
+      ],
+      "destination": "https://codehub-api.onrender.com/share/:username"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://codehub-api.onrender.com/api/:path*"
+    },
+    {
+      "source": "/share/:path*",
+      "destination": "https://codehub-api.onrender.com/share/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

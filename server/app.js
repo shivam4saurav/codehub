@@ -28,11 +28,11 @@ const CLIENT_DIST = path.resolve(serverDir, '../client/dist');
  * Render or a plain VPS), serve it from here too. On a split deployment
  * (Vercel + Render) the directory simply does not exist and this is a no-op.
  */
-const attachClientBuild = (app) => {
-  const indexPath = path.join(CLIENT_DIST, 'index.html');
+const attachClientBuild = (app, clientDist) => {
+  const indexPath = path.join(clientDist, 'index.html');
   if (!fs.existsSync(indexPath)) return false;
 
-  app.use(express.static(CLIENT_DIST, { index: false, maxAge: '1h' }));
+  app.use(express.static(clientDist, { index: false, maxAge: '1h' }));
 
   app.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
@@ -52,9 +52,13 @@ const attachClientBuild = (app) => {
   return true;
 };
 
-/** Conservative crawler sniffing - only used to pick the meta-tagged variant. */
-const isCrawler = (userAgent = '') =>
-  /bot|crawler|spider|facebookexternalhit|twitterbot|linkedinbot|slackbot|whatsapp|telegrambot|discordbot|embedly|preview/i.test(
+/**
+ * Conservative crawler sniffing - only used to pick the meta-tagged variant.
+ * client/vercel.json has the same rule for the Vercel + Render setup; a test
+ * keeps the two in agreement.
+ */
+export const isCrawler = (userAgent = '') =>
+  /bot|crawler|spider|facebookexternalhit|facebot|whatsapp|embedly|iframely|preview/i.test(
     userAgent,
   );
 
@@ -73,11 +77,19 @@ const enforceKnownOrigin = (req, _res, next) => {
   return next(ApiError.forbidden('Request origin is not allowed', { code: 'BAD_ORIGIN' }));
 };
 
-export const createApp = () => {
+/**
+ * Number of proxy hops to trust for req.ip. An explicit TRUST_PROXY wins;
+ * otherwise production assumes one hop (the host's load balancer).
+ */
+export const resolveTrustProxy = (configured, isProduction) =>
+  configured ?? (isProduction ? 1 : 0);
+
+export const createApp = ({ clientDist = CLIENT_DIST } = {}) => {
   const app = express();
 
-  // Render/Railway/Vercel put the app behind a proxy; needed for correct IPs.
-  if (env.isProduction) app.set('trust proxy', 1);
+  // Rate limits key on req.ip, so it must be the visitor, not a proxy.
+  const proxyHops = resolveTrustProxy(env.TRUST_PROXY, env.isProduction);
+  if (proxyHops > 0) app.set('trust proxy', proxyHops);
 
   app.disable('x-powered-by');
 
@@ -121,15 +133,19 @@ export const createApp = () => {
   app.use(globalLimiter);
   app.use(enforceKnownOrigin);
 
-  app.get('/', (_req, res) => {
-    res.json({
-      name: 'CodeHub API',
-      status: 'ok',
-      docs: `${env.SERVER_URL}/api/health`,
-    });
-  });
-
-  app.use('/api', routes);
+  /*
+   * API responses default to "never store". Vercel's proxy caches whatever the
+   * origin marks as cacheable, and a signed-in response must never be served
+   * to someone else. Public routes (share card, public profile) opt back in.
+   */
+  app.use(
+    '/api',
+    (_req, res, next) => {
+      res.set('Cache-Control', 'private, no-store');
+      next();
+    },
+    routes,
+  );
 
   /**
    * Crawler-friendly share route.
@@ -155,7 +171,17 @@ export const createApp = () => {
   );
 
   // Optional single-service deployment: serve the built SPA if it is present.
-  attachClientBuild(app);
+  attachClientBuild(app, clientDist);
+
+  // Registered after the SPA so a browser opening "/" gets the app, not JSON.
+  // On an API-only deploy (Vercel + Render) this is what "/" returns.
+  app.get('/', (_req, res) => {
+    res.json({
+      name: 'CodeHub API',
+      status: 'ok',
+      docs: `${env.SERVER_URL}/api/health`,
+    });
+  });
 
   app.use(notFound);
   app.use(errorHandler);
