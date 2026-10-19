@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" class="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f7f6f2" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <title>CodeHub - know what to solve next</title>
+    <meta
+      name="description"
+      content="CodeHub reads your Codeforces and LeetCode history, finds your weakest topics and picks unsolved problems just above your level. Also: one contest calendar with reminders, and a shareable profile card."
+    />
+
+    <!-- Client-side OG defaults. Public profiles (/u/:username) are served by
+         Express with per-user meta tags, because social crawlers do not run JS. -->
+    <meta property="og:title" content="CodeHub" />
+    <meta
+      property="og:description"
+      content="Know what to solve next on Codeforces and LeetCode."
+    />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Apply the saved theme before first paint so dark-mode users never see a white flash. -->
+    <script>
+      try {
+        var saved = localStorage.getItem('codehub:theme-v2');
+        var dark =
+          saved === 'dark' ||
+          (saved === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (dark) document.documentElement.className = 'dark';
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

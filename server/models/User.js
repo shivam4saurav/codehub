@@ -1,0 +1,104 @@
+import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
+
+import { CARD_THEMES } from '../config/constants.js';
+
+const BCRYPT_ROUNDS = 12;
+
+/** One active refresh token per device/session. Stored hashed, never raw. */
+const refreshSessionSchema = new mongoose.Schema(
+  {
+    tokenHash: { type: String, required: true },
+    userAgent: { type: String, default: '' },
+    createdAt: { type: Date, default: Date.now },
+    expiresAt: { type: Date, required: true },
+  },
+  { _id: false },
+);
+
+const userSchema = new mongoose.Schema(
+  {
+    username: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 3,
+      maxlength: 30,
+      match: [/^[a-zA-Z0-9_-]+$/, 'Username may only contain letters, numbers, _ and -'],
+    },
+    usernameLower: { type: String, required: true, lowercase: true, trim: true },
+    email: { type: String, required: true, trim: true, lowercase: true },
+    passwordHash: { type: String, required: true, select: false },
+    displayName: { type: String, trim: true, maxlength: 60, default: '' },
+    avatarUrl: { type: String, trim: true, default: '' },
+    bio: { type: String, trim: true, maxlength: 240, default: '' },
+
+    preferences: {
+      theme: { type: String, enum: ['dark', 'light', 'system'], default: 'light' },
+      reducedMotion: { type: Boolean, default: false },
+      emailReminders: { type: Boolean, default: true },
+    },
+
+    /**
+     * Public sharing is OFF by default - /u/:username and the share card stay
+     * private until the user opts in from Settings.
+     */
+    publicProfile: {
+      enabled: { type: Boolean, default: false },
+      cardTheme: { type: String, enum: CARD_THEMES, default: 'dark-neon' },
+      showEmail: { type: Boolean, default: false },
+    },
+
+    refreshSessions: { type: [refreshSessionSchema], default: [], select: false },
+
+    /** Drives the manual refresh cooldown on the dashboard. */
+    lastProfileRefreshAt: { type: Date, default: null },
+  },
+  { timestamps: true },
+);
+
+userSchema.index({ usernameLower: 1 }, { unique: true });
+userSchema.index({ email: 1 }, { unique: true });
+
+// Mongoose 9 document middleware is promise/sync based - declaring a `next`
+// parameter here would never be called.
+userSchema.pre('validate', function normaliseUsername() {
+  if (this.username) this.usernameLower = this.username.toLowerCase();
+});
+
+userSchema.statics.hashPassword = function hashPassword(plainPassword) {
+  return bcrypt.hash(plainPassword, BCRYPT_ROUNDS);
+};
+
+userSchema.methods.verifyPassword = function verifyPassword(plainPassword) {
+  if (!this.passwordHash) return Promise.resolve(false);
+  return bcrypt.compare(plainPassword, this.passwordHash);
+};
+
+/** Safe representation for API responses - never leaks hashes or sessions. */
+userSchema.methods.toSafeJSON = function toSafeJSON() {
+  return {
+    id: this._id.toString(),
+    username: this.username,
+    email: this.email,
+    displayName: this.displayName || this.username,
+    avatarUrl: this.avatarUrl,
+    bio: this.bio,
+    preferences: {
+      theme: this.preferences?.theme ?? 'light',
+      reducedMotion: this.preferences?.reducedMotion ?? false,
+      emailReminders: this.preferences?.emailReminders ?? true,
+    },
+    publicProfile: {
+      enabled: this.publicProfile?.enabled ?? false,
+      cardTheme: this.publicProfile?.cardTheme ?? 'dark-neon',
+      showEmail: this.publicProfile?.showEmail ?? false,
+    },
+    lastProfileRefreshAt: this.lastProfileRefreshAt,
+    createdAt: this.createdAt,
+  };
+};
+
+export const User = mongoose.models.User ?? mongoose.model('User', userSchema);
+
+export default User;

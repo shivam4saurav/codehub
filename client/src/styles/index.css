@@ -1,0 +1,243 @@
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-sans/700.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /*
+   * Two themes, one set of tokens. Each value is an RGB triplet so Tailwind's
+   * alpha modifiers (bg-surface-raised/80) keep working.
+   *
+   * Light ("paper") is the default: warm off-white, near-black ink, and one
+   * accent - Accepted green. Dark ("ink") keeps the same warmth instead of the
+   * usual blue-grey.
+   */
+  :root,
+  :root.light {
+    --surface-base: 247 246 242;
+    --surface-raised: 255 255 255;
+    --surface-overlay: 255 255 255;
+    --surface-inset: 241 239 233;
+    --content-primary: 28 27 24;
+    --content-secondary: 82 79 72;
+    --content-muted: 120 115 106;
+    --content-inverse: 255 255 255;
+    --edge: 226 223 214;
+    --edge-strong: 204 200 189;
+
+    /* Accent text shades: dark greens that pass contrast on white. */
+    --brand-100: 12 74 46;
+    --brand-200: 18 94 59;
+    --brand-300: 23 110 69;
+
+    --accent-cyan: 14 116 144;
+    --accent-lime: 77 124 15;
+    --accent-amber: 166 95 0;
+    --accent-rose: 190 18 60;
+
+    --state-success: 21 128 61;
+    --state-warning: 166 95 0;
+    --state-danger: 190 38 38;
+    --state-info: 37 89 170;
+
+    --platform-leetcode: 168 92 0;
+    --platform-codeforces: 21 101 160;
+    --platform-codechef: 124 74 42;
+
+    color-scheme: light;
+  }
+
+  :root.dark {
+    --surface-base: 20 19 17;
+    --surface-raised: 28 27 24;
+    --surface-overlay: 36 34 31;
+    --surface-inset: 24 23 21;
+    --content-primary: 236 234 228;
+    --content-secondary: 178 173 163;
+    --content-muted: 136 131 122;
+    --content-inverse: 255 255 255;
+    --edge: 46 44 40;
+    --edge-strong: 66 63 58;
+
+    --brand-100: 209 245 223;
+    --brand-200: 160 228 189;
+    --brand-300: 98 201 140;
+
+    --accent-cyan: 103 196 214;
+    --accent-lime: 170 210 90;
+    --accent-amber: 232 168 56;
+    --accent-rose: 240 128 150;
+
+    --state-success: 98 201 140;
+    --state-warning: 232 168 56;
+    --state-danger: 240 113 103;
+    --state-info: 125 170 240;
+
+    --platform-leetcode: 255 170 50;
+    --platform-codeforces: 90 170 230;
+    --platform-codechef: 210 160 115;
+
+    color-scheme: dark;
+  }
+
+  * {
+    border-color: rgb(var(--edge) / 1);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-surface-base font-sans text-content-primary antialiased;
+    min-height: 100vh;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'kern';
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display;
+  }
+
+  ::selection {
+    background: rgb(43 154 92 / 0.25);
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-surface-base;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--edge-strong) / 0.9) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    @apply rounded-full;
+    background-color: rgb(var(--edge-strong) / 0.85);
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer components {
+  /* The standard panel: flat, 1px border, no glow. */
+  .glass {
+    @apply rounded-2xl border border-edge bg-surface-raised;
+  }
+
+  .glass-strong {
+    @apply rounded-2xl border border-edge-strong bg-surface-overlay shadow-overlay;
+  }
+
+  .card-hover {
+    @apply transition-colors duration-150 hover:border-edge-strong;
+  }
+
+  .gradient-text {
+    @apply text-brand-300;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-md border border-edge bg-surface-raised
+      px-2.5 py-1 text-xs font-medium text-content-secondary transition-colors
+      hover:border-edge-strong hover:text-content-primary;
+  }
+
+  .chip-active {
+    @apply border-brand-500/60 bg-brand-500/10 text-content-primary;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden rounded-lg bg-surface-inset;
+  }
+
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0 -translate-x-full animate-shimmer;
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      rgb(var(--content-muted) / 0.1),
+      transparent
+    );
+  }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500
+      focus-visible:ring-offset-2 focus-visible:ring-offset-surface-base;
+  }
+
+  /* Small section label above a heading. */
+  .eyebrow {
+    @apply font-mono text-xs font-medium text-content-muted;
+  }
+
+  /* Plain text link in body copy. */
+  .text-link {
+    @apply rounded font-medium text-brand-300 underline decoration-brand-300/30 underline-offset-2
+      transition-colors hover:decoration-brand-300;
+  }
+
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    @apply sr-only;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Respect the OS setting: kill motion, keep meaning. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Same for the in-app "reduce motion" preference. */
+html[data-reduced-motion='true'] *,
+html[data-reduced-motion='true'] *::before,
+html[data-reduced-motion='true'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
