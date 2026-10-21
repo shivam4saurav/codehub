@@ -492,6 +492,48 @@ describe('user model constraints', () => {
     ).rejects.toThrow(/passwordHash/i);
   });
 
+  it('treats an account written before hasPassword existed as having one', async () => {
+    // Regression: accounts created before the field was added have it absent,
+    // not false. Reading `hasPassword === true` told those users they had no
+    // password, so Settings offered "set a password" and the server then
+    // rejected the submit. Reproduced by deleting the field directly.
+    const session = await registerPasswordUser({ username: 'legacy', email: 'legacy@example.com' });
+    await User.collection.updateOne(
+      { email: 'legacy@example.com' },
+      { $unset: { hasPassword: '' } },
+    );
+
+    const stored = await User.collection.findOne({ email: 'legacy@example.com' });
+    expect('hasPassword' in stored).toBe(false);
+
+    const me = await request(app).get('/api/auth/me').set('Cookie', session).expect(200);
+    expect(me.body.user.authMethods).toEqual({ password: true, google: false });
+
+    // And the current password is still demanded, rather than 400-ing later.
+    await request(app)
+      .patch('/api/auth/password')
+      .set('Cookie', session)
+      .send({ newPassword: 'another123' })
+      .expect(400);
+  });
+
+  it('repairs the mirror field when such an account changes its password', async () => {
+    const session = await registerPasswordUser({ username: 'legacy2', email: 'legacy2@example.com' });
+    await User.collection.updateOne(
+      { email: 'legacy2@example.com' },
+      { $unset: { hasPassword: '' } },
+    );
+
+    await request(app)
+      .patch('/api/auth/password')
+      .set('Cookie', session)
+      .send({ currentPassword: 'password123', newPassword: 'another123' })
+      .expect(200);
+
+    const repaired = await User.collection.findOne({ email: 'legacy2@example.com' });
+    expect(repaired.hasPassword).toBe(true);
+  });
+
   it('never exposes the password hash or Google id in API output', async () => {
     const { session } = await signInWithGoogle();
     const me = await request(app).get('/api/auth/me').set('Cookie', session).expect(200);

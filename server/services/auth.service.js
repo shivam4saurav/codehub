@@ -139,6 +139,9 @@ export const changePassword = async ({ user, currentPassword, newPassword }) => 
   const fresh = await User.findById(user._id).select('+passwordHash +refreshSessions');
   if (!fresh) throw ApiError.notFound('Account not found');
 
+  // Keep the mirror honest for accounts written before the field existed.
+  if (typeof fresh.hasPassword !== 'boolean') fresh.hasPassword = Boolean(fresh.passwordHash);
+
   if (fresh.passwordHash) {
     if (!currentPassword) throw ApiError.badRequest('Enter your current password');
 

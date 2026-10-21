@@ -44,9 +44,14 @@ const userSchema = new mongoose.Schema(
 
     /**
      * Mirrors "does this account have a password?" without loading the hash.
-     * Only auth.service.js ever writes it, and a test asserts it stays in sync.
+     * Only auth.service.js writes it, and both signup paths set it explicitly.
+     *
+     * Deliberately no `default`: Mongoose applies defaults when hydrating a
+     * document, so `default: false` would make accounts written before this
+     * field existed look password-less. Leaving it undefined lets
+     * canUsePassword() fall back to the googleId rule instead.
      */
-    hasPassword: { type: Boolean, default: false },
+    hasPassword: { type: Boolean },
 
     /** Google's stable account id (the OIDC "sub"), null for password-only users. */
     googleId: { type: String, default: null },
@@ -107,6 +112,19 @@ userSchema.methods.verifyPassword = function verifyPassword(plainPassword) {
   return bcrypt.compare(plainPassword, this.passwordHash);
 };
 
+/**
+ * Whether this account can sign in with a password.
+ *
+ * `hasPassword` is the authoritative mirror, but documents written before that
+ * field existed simply do not have it. Those accounts always have a password:
+ * the schema only permits a missing passwordHash when googleId is set. Deriving
+ * the fallback here means a missed backfill cannot produce a broken UI.
+ */
+userSchema.methods.canUsePassword = function canUsePassword() {
+  if (typeof this.hasPassword === 'boolean') return this.hasPassword;
+  return !this.googleId;
+};
+
 /** Safe representation for API responses - never leaks hashes or sessions. */
 userSchema.methods.toSafeJSON = function toSafeJSON() {
   return {
@@ -131,7 +149,7 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
      * password" to Google-only users instead of a change form they cannot use.
      */
     authMethods: {
-      password: this.hasPassword === true,
+      password: this.canUsePassword(),
       google: Boolean(this.googleId),
     },
     lastProfileRefreshAt: this.lastProfileRefreshAt,
