@@ -27,9 +27,14 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Enter your password'),
 });
 
+/**
+ * `currentPassword` is optional here because a Google-created account has no
+ * password to confirm. The service still demands it whenever one exists, so
+ * this cannot be used to skip the check on a password account.
+ */
 export const changePasswordSchema = z
   .object({
-    currentPassword: z.string().min(1, 'Enter your current password'),
+    currentPassword: z.string().min(1, 'Enter your current password').optional(),
     newPassword: password,
   })
   .refine((data) => data.currentPassword !== data.newPassword, {

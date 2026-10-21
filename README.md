@@ -618,6 +618,7 @@ COOKIE_SAMESITE=lax                        # same-site thanks to the Vercel prox
 TRUST_PROXY=2                              # Vercel + Render's balancer, so rate limits see the visitor's IP
 ENABLE_CRON=true
 CLIST_USERNAME=... / CLIST_API_KEY=...     # optional, for LeetCode and CodeChef contests
+GOOGLE_CLIENT_ID=... / GOOGLE_CLIENT_SECRET=...   # optional, enables "Continue with Google"
 ```
 
 Render's free instance sleeps after 15 idle minutes and takes about a minute to wake. The client
@@ -640,6 +641,41 @@ fake that header to dodge the per-IP limits, so failed logins are also limited p
 
 Before deploying, set the Render address in the three `destination` fields of
 `client/vercel.json` if your service is not called `codehub-api`.
+
+### Google sign-in (optional)
+
+CodeHub uses the OAuth 2.0 **authorization code flow with PKCE**, handled entirely server-side:
+the client secret never reaches the browser and no Google JavaScript is loaded. The redirect URI
+points at the *frontend's* origin, which Vercel forwards to Render, so the session cookie stays
+first-party.
+
+```text
+/login ──▶ /api/auth/google ──▶ accounts.google.com ──▶ /api/auth/google/callback ──▶ /
+           (sets a signed, 10-minute state + PKCE cookie)   (verifies state, exchanges code)
+```
+
+1. In [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials),
+   create an **OAuth client ID** of type **Web application**.
+2. Add these **Authorised redirect URIs** exactly:
+   ```text
+   http://localhost:5173/api/auth/google/callback
+   https://<your-vercel-domain>/api/auth/google/callback
+   ```
+3. Put the client ID and secret in `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` on Render (and in
+   `server/.env` for local development).
+
+Account rules:
+
+| Situation | Result |
+| --- | --- |
+| Google account already linked | signs in |
+| Same **verified** email as an existing account | links Google to it, then signs in |
+| No match | creates an account, with a username derived from the email |
+| Email not verified by Google | refused — linking on an unverified address would be a takeover path |
+
+Accounts created through Google have no password. Settings offers them "Set a password" (no current
+password required, since the session already proves ownership) so they can later sign in either way.
+Leaving the two variables blank disables the button cleanly; email/password login is unaffected.
 
 ### Single-service alternative
 

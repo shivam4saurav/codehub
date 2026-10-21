@@ -13,6 +13,7 @@ import {
   loginAccountKey,
   userOrIpKey,
 } from '../../middleware/rateLimiters.js';
+import { safeRedirectPath } from '../../utils/safeRedirect.js';
 
 /**
  * Behaviour that only matters once the app is deployed: how the server sees
@@ -161,6 +162,57 @@ describe('cache headers', () => {
     const response = await request(app).get('/api/health');
 
     expect(response.headers['cache-control']).toBe('private, no-store');
+  });
+});
+
+/* ------------------------------------------------ redirect sanitising */
+
+describe('safeRedirectPath', () => {
+  // The server copy guards the OAuth `next` parameter; the client copy guards
+  // ?next= after a password login. They must agree, so the rules live in two
+  // files that this test keeps honest.
+  const clientSource = fs.readFileSync(
+    path.resolve(here, '../../../client/src/utils/safeRedirect.js'),
+    'utf8',
+  );
+
+  it.each([
+    'https://evil.example.com',
+    'http://evil.example.com',
+    '//evil.example.com',
+    '/\\evil.example.com',
+    '/\\/evil.example.com',
+    'javascript:alert(1)',
+    'data:text/html,<script>alert(1)</script>',
+    'evil.example.com',
+    '/login',
+    '/register?next=/x',
+    '',
+  ])('refuses %s', (hostile) => {
+    expect(safeRedirectPath(hostile, '/fallback')).toBe('/fallback');
+  });
+
+  it.each(['/', '/contests', '/u/ada', '/problems?topic=graphs', '/settings#sharing'])(
+    'allows %s',
+    (safe) => {
+      expect(safeRedirectPath(safe, '/fallback')).toBe(safe);
+    },
+  );
+
+  it('refuses a newline that would smuggle a header', () => {
+    expect(safeRedirectPath('/ok\r\nLocation: https://evil.example.com', '/fallback')).toBe(
+      '/fallback',
+    );
+  });
+
+  it('survives a malformed percent-encoding', () => {
+    expect(safeRedirectPath('/%E0%A4%A', '/fallback')).toBe('/fallback');
+  });
+
+  it('still exists on the client, with the same guard rules', () => {
+    for (const rule of ['startsWith(\'/\')', '^\\/[/\\\\]', '^[a-z][a-z0-9+.-]*:']) {
+      expect(clientSource).toContain(rule);
+    }
   });
 });
 

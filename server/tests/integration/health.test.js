@@ -58,6 +58,7 @@ describe('GET /api/health', () => {
     expect(response.body.integrations).toEqual({
       clist: expect.stringMatching(/configured|not-configured/),
       smtp: expect.stringMatching(/configured|console-fallback/),
+      google: expect.stringMatching(/configured|not-configured/),
     });
     expect(JSON.stringify(response.body)).not.toMatch(/secret|password/i);
   });

@@ -23,6 +23,7 @@ export const health = asyncHandler(async (_req, res) => {
     integrations: {
       clist: env.clistEnabled ? 'configured' : 'not-configured',
       smtp: env.smtpEnabled ? 'configured' : 'console-fallback',
+      google: env.googleEnabled ? 'configured' : 'not-configured',
     },
     cache: cache.stats(),
     sources,

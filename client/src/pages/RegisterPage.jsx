@@ -2,6 +2,7 @@ import { ArrowRight, AtSign, Check, KeyRound, UserRound } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
+import GoogleSignInButton from '../components/auth/GoogleSignInButton.jsx';
 import { PageTransition } from '../components/common/Motion.jsx';
 import Button from '../components/ui/Button.jsx';
 import Input from '../components/ui/Input.jsx';
@@ -70,80 +71,105 @@ export const RegisterPage = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="glass space-y-5 p-6" noValidate>
-          <Input
-            label="Username"
-            name="username"
-            icon={UserRound}
-            autoComplete="username"
-            placeholder="ada_lovelace"
-            hint="This becomes your public profile link: /u/username"
-            value={form.username}
-            error={fieldErrors.username || usernameError}
-            onChange={(event) => setForm({ ...form, username: event.target.value })}
-            required
-          />
+        <div className="glass p-6">
+          <GoogleSignInButton label="Sign up with Google" />
 
-          <Input
-            label="Email"
-            name="email"
-            type="email"
-            icon={AtSign}
-            autoComplete="email"
-            placeholder="you@example.com"
-            value={form.email}
-            error={fieldErrors.email}
-            onChange={(event) => setForm({ ...form, email: event.target.value })}
-            required
-          />
+          <div className="my-5 flex items-center gap-3">
+            <span className="h-px flex-1 bg-edge" aria-hidden="true" />
+            <span className="text-xs text-content-muted">or</span>
+            <span className="h-px flex-1 bg-edge" aria-hidden="true" />
+          </div>
 
-          <div>
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
             <Input
-              label="Password"
-              name="password"
-              type="password"
-              icon={KeyRound}
-              autoComplete="new-password"
-              placeholder="••••••••"
-              value={form.password}
-              error={fieldErrors.password}
-              onChange={(event) => setForm({ ...form, password: event.target.value })}
+              label="Username"
+              name="username"
+              icon={UserRound}
+              autoComplete="username"
+              placeholder="ada_lovelace"
+              hint="This becomes your public profile link: /u/username"
+              value={form.username}
+              error={fieldErrors.username || usernameError}
+              onChange={(event) => setForm({ ...form, username: event.target.value })}
               required
             />
 
-            <ul className="mt-3 space-y-1.5">
-              {passwordChecks.map((check) => (
-                <li
-                  key={check.key}
-                  className={cn(
-                    'flex items-center gap-1.5 text-xs transition',
-                    check.passed ? 'text-state-success' : 'text-content-muted',
-                  )}
-                >
-                  <Check size={12} aria-hidden="true" className={check.passed ? '' : 'opacity-40'} />
-                  {check.label}
-                </li>
-              ))}
-            </ul>
-          </div>
+            <Input
+              label="Email"
+              name="email"
+              type="email"
+              icon={AtSign}
+              autoComplete="email"
+              placeholder="you@example.com"
+              value={form.email}
+              error={fieldErrors.email}
+              onChange={(event) => setForm({ ...form, email: event.target.value })}
+              required
+            />
 
-          {formError ? (
-            <p role="alert" className="rounded-lg border border-state-danger/40 bg-state-danger/10 px-3 py-2 text-sm text-state-danger">
-              {formError}
+            <div>
+              <Input
+                label="Password"
+                name="password"
+                type="password"
+                icon={KeyRound}
+                autoComplete="new-password"
+                placeholder="••••••••"
+                value={form.password}
+                error={fieldErrors.password}
+                onChange={(event) => setForm({ ...form, password: event.target.value })}
+                required
+              />
+
+              <ul className="mt-3 space-y-1.5">
+                {passwordChecks.map((check) => (
+                  <li
+                    key={check.key}
+                    className={cn(
+                      'flex items-center gap-1.5 text-xs transition',
+                      check.passed ? 'text-state-success' : 'text-content-muted',
+                    )}
+                  >
+                    <Check
+                      size={12}
+                      aria-hidden="true"
+                      className={check.passed ? '' : 'opacity-40'}
+                    />
+                    {check.label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {formError ? (
+              <p
+                role="alert"
+                className="rounded-lg border border-state-danger/40 bg-state-danger/10 px-3 py-2 text-sm text-state-danger"
+              >
+                {formError}
+              </p>
+            ) : null}
+
+            <Button
+              type="submit"
+              className="w-full"
+              loading={registerState.isPending}
+              iconRight={ArrowRight}
+            >
+              Create account
+            </Button>
+
+            <p className="text-center text-sm text-content-secondary">
+              Already have an account?{' '}
+              <Link
+                to="/login"
+                className="focus-ring rounded font-medium text-brand-300 hover:text-brand-200"
+              >
+                Sign in
+              </Link>
             </p>
-          ) : null}
-
-          <Button type="submit" className="w-full" loading={registerState.isPending} iconRight={ArrowRight}>
-            Create account
-          </Button>
-
-          <p className="text-center text-sm text-content-secondary">
-            Already have an account?{' '}
-            <Link to="/login" className="focus-ring rounded font-medium text-brand-300 hover:text-brand-200">
-              Sign in
-            </Link>
-          </p>
-        </form>
+          </form>
+        </div>
 
         <p className="mt-6 text-center text-xs leading-relaxed text-content-muted">
           Your profile is private by default. Nothing is public until you turn on sharing in

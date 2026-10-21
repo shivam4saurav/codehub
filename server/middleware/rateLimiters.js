@@ -64,6 +64,19 @@ export const loginAccountLimiter = rateLimit({
   handler: handler('Too many failed sign-ins for this account. Please wait 15 minutes.'),
 });
 
+/**
+ * OAuth redirects. Looser than login because one sign-in costs two requests
+ * (start + callback) and a user may reasonably retry, but still bounded: each
+ * start does a little crypto and each callback calls Google.
+ */
+export const oauthLimiter = rateLimit({
+  ...base,
+  windowMs: 15 * 60_000,
+  limit: 40,
+  keyGenerator: clientIpKey,
+  handler: handler('Too many sign-in attempts. Please wait a few minutes before trying again.'),
+});
+
 /** Registration is cheap to abuse, so keep it tighter than login. */
 export const registerLimiter = rateLimit({
   ...base,

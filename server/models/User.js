@@ -28,7 +28,29 @@ const userSchema = new mongoose.Schema(
     },
     usernameLower: { type: String, required: true, lowercase: true, trim: true },
     email: { type: String, required: true, trim: true, lowercase: true },
-    passwordHash: { type: String, required: true, select: false },
+
+    /**
+     * Optional for accounts created through Google, which never have one.
+     * Mongoose skips required validation for unselected paths on existing
+     * documents, so saving a doc loaded without the hash still works.
+     */
+    passwordHash: {
+      type: String,
+      select: false,
+      required: function passwordRequiredWithoutOAuth() {
+        return !this.googleId;
+      },
+    },
+
+    /**
+     * Mirrors "does this account have a password?" without loading the hash.
+     * Only auth.service.js ever writes it, and a test asserts it stays in sync.
+     */
+    hasPassword: { type: Boolean, default: false },
+
+    /** Google's stable account id (the OIDC "sub"), null for password-only users. */
+    googleId: { type: String, default: null },
+
     displayName: { type: String, trim: true, maxlength: 60, default: '' },
     avatarUrl: { type: String, trim: true, default: '' },
     bio: { type: String, trim: true, maxlength: 240, default: '' },
@@ -59,6 +81,16 @@ const userSchema = new mongoose.Schema(
 
 userSchema.index({ usernameLower: 1 }, { unique: true });
 userSchema.index({ email: 1 }, { unique: true });
+/**
+ * One CodeHub account per Google account. This has to be a *partial* index
+ * rather than a sparse one: `googleId` defaults to null, so every document has
+ * the field, and a sparse unique index would reject the second password-only
+ * user. Indexing only string values leaves the nulls alone.
+ */
+userSchema.index(
+  { googleId: 1 },
+  { unique: true, partialFilterExpression: { googleId: { $type: 'string' } } },
+);
 
 // Mongoose 9 document middleware is promise/sync based - declaring a `next`
 // parameter here would never be called.
@@ -93,6 +125,14 @@ userSchema.methods.toSafeJSON = function toSafeJSON() {
       enabled: this.publicProfile?.enabled ?? false,
       cardTheme: this.publicProfile?.cardTheme ?? 'dark-neon',
       showEmail: this.publicProfile?.showEmail ?? false,
+    },
+    /**
+     * Which ways this account can sign in. Settings uses it to offer "set a
+     * password" to Google-only users instead of a change form they cannot use.
+     */
+    authMethods: {
+      password: this.hasPassword === true,
+      google: Boolean(this.googleId),
     },
     lastProfileRefreshAt: this.lastProfileRefreshAt,
     createdAt: this.createdAt,

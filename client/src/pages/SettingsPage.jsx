@@ -7,6 +7,7 @@ import { changePasswordRequest } from '../api/auth.api.js';
 import { PageTransition, Reveal } from '../components/common/Motion.jsx';
 import PageHeader from '../components/common/PageHeader.jsx';
 import HandlesCard from '../components/settings/HandlesCard.jsx';
+import { GoogleGlyph } from '../components/share/BrandGlyphs.jsx';
 import Badge from '../components/ui/Badge.jsx';
 import Button from '../components/ui/Button.jsx';
 import { Card, CardDescription, CardHeader, CardTitle } from '../components/ui/Card.jsx';
@@ -134,6 +135,10 @@ export const SettingsPage = () => {
   };
 
   const publicProfile = user?.publicProfile ?? { enabled: false, cardTheme: 'dark-neon' };
+
+  // Google-created accounts have no password until they choose to add one.
+  const hasPassword = user?.authMethods?.password !== false;
+  const googleLinked = user?.authMethods?.google === true;
   const publicUrl = user ? `${window.location.origin}/u/${user.username}` : '';
 
   return (
@@ -334,31 +339,43 @@ export const SettingsPage = () => {
               className="scroll-mt-24"
               onSubmit={(event) => {
                 event.preventDefault();
-                passwordMutation.mutate(passwordForm);
+                // A Google-only account has no current password to confirm.
+                passwordMutation.mutate(
+                  hasPassword ? passwordForm : { newPassword: passwordForm.newPassword },
+                );
               }}
             >
               <CardHeader>
                 <div>
-                  <CardTitle>
-                    Password
-                  </CardTitle>
+                  <CardTitle>{hasPassword ? 'Password' : 'Set a password'}</CardTitle>
                   <CardDescription>
-                    Changing your password signs you out of every device.
+                    {hasPassword
+                      ? 'Changing your password signs you out of every device.'
+                      : 'You signed up with Google. Adding a password lets you sign in either way.'}
                   </CardDescription>
                 </div>
+
+                {googleLinked ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-md border border-edge bg-surface-inset px-2.5 py-1 text-xs text-content-secondary">
+                    <GoogleGlyph size={13} />
+                    Google connected
+                  </span>
+                ) : null}
               </CardHeader>
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <Input
-                  label="Current password"
-                  type="password"
-                  autoComplete="current-password"
-                  value={passwordForm.currentPassword}
-                  onChange={(event) =>
-                    setPasswordForm({ ...passwordForm, currentPassword: event.target.value })
-                  }
-                  required
-                />
+                {hasPassword ? (
+                  <Input
+                    label="Current password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={passwordForm.currentPassword}
+                    onChange={(event) =>
+                      setPasswordForm({ ...passwordForm, currentPassword: event.target.value })
+                    }
+                    required
+                  />
+                ) : null}
 
                 <Input
                   label="New password"
@@ -378,9 +395,11 @@ export const SettingsPage = () => {
                   type="submit"
                   variant="secondary"
                   loading={passwordMutation.isPending}
-                  disabled={!passwordForm.currentPassword || !passwordForm.newPassword}
+                  disabled={
+                    !passwordForm.newPassword || (hasPassword && !passwordForm.currentPassword)
+                  }
                 >
-                  Update password
+                  {hasPassword ? 'Update password' : 'Set password'}
                 </Button>
               </div>
             </Card>

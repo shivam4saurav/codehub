@@ -11,4 +11,7 @@ process.env.CLIST_API_KEY = '';
 process.env.SMTP_HOST = '';
 process.env.SMTP_USER = '';
 process.env.SMTP_PASS = '';
+process.env.GOOGLE_CLIENT_ID = '';
+process.env.GOOGLE_CLIENT_SECRET = '';
+process.env.GOOGLE_REDIRECT_URI = '';
 process.env.ENABLE_CRON = 'false';

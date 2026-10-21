@@ -78,6 +78,16 @@ const schema = z.object({
   CLIST_USERNAME: optionalString,
   CLIST_API_KEY: optionalString,
 
+  /**
+   * Google sign-in. Optional, like every other integration: without these the
+   * app still runs and email/password login is unaffected.
+   * The redirect URI defaults to CLIENT_URL + /api/auth/google/callback, which
+   * keeps the whole flow on the frontend's own origin (first-party cookies).
+   */
+  GOOGLE_CLIENT_ID: optionalString,
+  GOOGLE_CLIENT_SECRET: optionalString,
+  GOOGLE_REDIRECT_URI: optionalString,
+
   SMTP_HOST: optionalString,
   SMTP_PORT: z.coerce.number().int().positive().default(587),
   SMTP_SECURE: booleanish(false),
@@ -124,6 +134,10 @@ export const env = Object.freeze({
   isDevelopment: raw.NODE_ENV === 'development',
   /** clist.by is optional: contests still work without it (Codeforces + cache). */
   clistEnabled: Boolean(raw.CLIST_API_KEY && raw.CLIST_USERNAME),
+  /** Google sign-in is optional; the button reports this cleanly when off. */
+  googleEnabled: Boolean(raw.GOOGLE_CLIENT_ID && raw.GOOGLE_CLIENT_SECRET),
+  googleRedirectUri:
+    raw.GOOGLE_REDIRECT_URI || `${clientOrigins[0] ?? 'http://localhost:5173'}/api/auth/google/callback`,
   /** Without SMTP credentials reminder emails are logged instead of sent. */
   smtpEnabled: Boolean(raw.SMTP_HOST),
 });
