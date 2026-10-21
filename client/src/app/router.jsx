@@ -17,6 +17,7 @@ const ProfilePage = lazy(() => import('../pages/ProfilePage.jsx'));
 const PublicProfilePage = lazy(() => import('../pages/PublicProfilePage.jsx'));
 const RemindersPage = lazy(() => import('../pages/RemindersPage.jsx'));
 const SettingsPage = lazy(() => import('../pages/SettingsPage.jsx'));
+const PrivacyPage = lazy(() => import('../pages/PrivacyPage.jsx'));
 
 export const AppRoutes = () => (
   <Suspense fallback={<LoadingScreen />}>
@@ -34,6 +35,10 @@ export const AppRoutes = () => (
 
         {/* Public, opt-in. Crawlers are served meta tags by GET /share/:username. */}
         <Route path="/u/:username" element={<PublicProfilePage />} />
+
+        {/* Must stay reachable without signing in: Google requires a public
+            privacy policy URL for the OAuth consent screen. */}
+        <Route path="/privacy" element={<PrivacyPage />} />
 
         <Route
           path="/reminders"

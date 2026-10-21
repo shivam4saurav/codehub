@@ -1,4 +1,5 @@
 import { Activity } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 import { useSourceHealth } from '../../hooks/useSourceHealth.js';
 import cn from '../../utils/cn.js';
@@ -32,9 +33,14 @@ export const Footer = () => {
             Details
           </a>
         </span>
-        <span>
-          CodeHub is a student project. Problems, ratings and contests belong to Codeforces,
-          LeetCode and CodeChef.
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <Link to="/privacy" className="focus-ring rounded hover:text-content-primary">
+            Privacy
+          </Link>
+          <span>
+            CodeHub is a student project. Problems, ratings and contests belong to Codeforces,
+            LeetCode and CodeChef.
+          </span>
         </span>
       </div>
     </footer>
