@@ -353,6 +353,7 @@ All routes are under `/api`. Third-party-backed responses include `{ stale, fetc
 | `GET` | `/auth/me` | Current user |
 | `PATCH` | `/auth/password` | Changes password and revokes all sessions |
 | `PATCH` | `/users/me` | Profile, preferences, public-sharing settings |
+| `DELETE` | `/users/me` | Deletes the account and everything it owns. Body: `confirmUsername`, plus `currentPassword` for accounts that have a password. Limited to 5 per hour |
 
 ### Handles, problems, practice
 | Method | Path | Notes |
@@ -619,6 +620,11 @@ TRUST_PROXY=2                              # Vercel + Render's balancer, so rate
 ENABLE_CRON=true
 CLIST_USERNAME=... / CLIST_API_KEY=...     # optional, for LeetCode and CodeChef contests
 GOOGLE_CLIENT_ID=... / GOOGLE_CLIENT_SECRET=...   # optional, enables "Continue with Google"
+SMTP_HOST=smtp-relay.brevo.com             # optional, enables reminder emails (see "Reminder emails")
+SMTP_PORT=2525
+SMTP_SECURE=false
+SMTP_USER=... / SMTP_PASS=...              # Brevo SMTP login and SMTP key
+MAIL_FROM="CodeHub <your-verified-sender@example.com>"
 ```
 
 Render's free instance sleeps after 15 idle minutes and takes about a minute to wake. The client
@@ -676,6 +682,35 @@ Account rules:
 Accounts created through Google have no password. Settings offers them "Set a password" (no current
 password required, since the session already proves ownership) so they can later sign in either way.
 Leaving the two variables blank disables the button cleanly; email/password login is unaffected.
+
+### Reminder emails (optional)
+
+Render's free tier blocks outbound SMTP on ports 25, 465 and 587, so Gmail's SMTP server will not
+work from there. Brevo's relay accepts port **2525**, and its free plan allows 300 emails a day.
+
+1. Create a free [Brevo](https://www.brevo.com/) account. Skip the paid plan screen.
+2. Under **Settings → Senders, domains, IPs → Senders**, add the address you want mail to come from
+   and confirm the verification email. Unverified senders are rejected.
+3. Under **Settings → SMTP & API → SMTP**, copy the login (it ends in `@smtp-brevo.com`) and
+   generate an **SMTP key**. This is not the same as an API key, and it is shown only once.
+4. Set the `SMTP_*` and `MAIL_FROM` variables above on Render and in `server/.env`, then redeploy.
+
+`GET /api/health` reports `smtp: configured` once the host is set. To test end to end, insert a
+reminder whose `dueAt` is in the past: the minute-by-minute worker claims it, sends it and marks it
+`sent`.
+
+If mail lands in spam, it is usually because `MAIL_FROM` is a free-mail address (for example
+`gmail.com`) sent through a relay. A sender on your own domain, with Brevo's SPF and DKIM records
+added, fixes that.
+
+### Account deletion
+
+Settings has a **Delete account** section. It asks for the username and, for accounts that have a
+password, the current password. Accounts created through Google confirm with the username alone.
+Deleting removes the user, linked handles, bookmarks and notes, reminders, recommendation history
+and sessions. The public profile and share card stop working straight away, and the username and
+email can be registered again. Cached third-party profile snapshots are keyed by platform handle,
+not by user, so they are not part of the account and are not deleted.
 
 ### Single-service alternative
 

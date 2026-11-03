@@ -89,6 +89,7 @@ export const PublicProfilePage = () => {
     return (
       <PageTransition>
         <section className="mx-auto w-full max-w-xl px-4 py-16 sm:px-6">
+          <h1 className="sr-only">{isPrivate ? 'Profile unavailable' : 'Profile could not load'}</h1>
           {isPrivate ? (
             <EmptyState
               icon={EyeOff}
