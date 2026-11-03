@@ -192,7 +192,12 @@ export const getRecommendations = async ({
 
   const leetcodeDifficulties = nextLeetCodeDifficulty(platformData.leetcode?.solved);
 
-  for (const topic of workingTopics) {
+  /**
+   * Find up to `perTopic` unsolved problems for one topic on the chosen
+   * platform and add them to `picked`. Returns how many were added.
+   */
+  const pickForTopic = async (topic) => {
+    const before = picked.length;
     const baseFilter = {
       platform,
       canonicalTopics: topic.topicKey,
@@ -270,6 +275,52 @@ export const getRecommendations = async ({
         // Per-item, so the UI can flag exactly which cards fell outside the band.
         targetWindow: window,
       });
+    }
+
+    return picked.length - before;
+  };
+
+  const platformLabel = platform === PLATFORMS.LEETCODE ? 'LeetCode' : 'Codeforces';
+  const barrenTopics = [];
+
+  for (const topic of workingTopics) {
+    if ((await pickForTopic(topic)) === 0) barrenTopics.push(topic);
+  }
+
+  /**
+   * A weak topic can have nothing to offer on this platform: LeetCode-only
+   * topics such as Linked Lists have no Codeforces problems at all, and a very
+   * strong user may have cleared everything in a topic. Weak topics come from
+   * the combined history of every linked platform, so this is easy to hit.
+   * Rather than return a short or empty list, top up from the next-weakest
+   * active topics and say so. Never done for an explicit topic request or a
+   * cold start: those asked for something specific.
+   */
+  const canExpand = requestedTopics.length === 0 && !isColdStart;
+  const MAX_EXTRA_TOPICS = 10;
+
+  if (canExpand && picked.length < count && barrenTopics.length > 0) {
+    const tried = new Set(workingTopics.map((topic) => topic.topicKey));
+    const extras = [...ranking.active]
+      .sort((a, b) => a.score - b.score)
+      .filter((topic) => !tried.has(topic.topicKey))
+      .slice(0, MAX_EXTRA_TOPICS);
+
+    let addedFromExtras = 0;
+    for (const topic of extras) {
+      if (picked.length >= count) break;
+      addedFromExtras += await pickForTopic(topic);
+    }
+
+    const names = barrenTopics.map((topic) => topic.name).join(', ');
+    if (addedFromExtras > 0) {
+      notes.push(
+        `No unsolved ${platformLabel} problems found for ${names}, so the next weakest topics were used to fill the list.`,
+      );
+    } else if (picked.length === 0) {
+      notes.push(
+        `No unsolved ${platformLabel} problems found for your weakest topics (${names}). Try another platform or difficulty.`,
+      );
     }
   }
 

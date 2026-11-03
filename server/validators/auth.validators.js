@@ -42,6 +42,14 @@ export const changePasswordSchema = z
     path: ['newPassword'],
   });
 
+/**
+ * `currentPassword` is optional for the same reason as in changePasswordSchema:
+ * Google-only accounts have none. The service demands it whenever one exists.
+ */
+export const deleteAccountSchema = z.object({
+  confirmUsername: z.string().trim().min(1, 'Type your username to confirm'),
+  currentPassword: z.string().min(1, 'Enter your current password').optional(),
+});
 export const updateProfileSchema = z
   .object({
     displayName: z.string().trim().max(60, 'Keep it under 60 characters').optional(),
@@ -64,4 +72,10 @@ export const updateProfileSchema = z
   })
   .refine((data) => Object.keys(data).length > 0, { message: 'Nothing to update' });
 
-export default { registerSchema, loginSchema, changePasswordSchema, updateProfileSchema };
+export default {
+  registerSchema,
+  loginSchema,
+  changePasswordSchema,
+  deleteAccountSchema,
+  updateProfileSchema,
+};

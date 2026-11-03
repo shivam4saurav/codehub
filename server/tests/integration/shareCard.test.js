@@ -167,6 +167,68 @@ describe('public profile endpoints', () => {
     await request(app).get('/api/card/ada_lovelace.png').expect(404);
   });
 
+  // Regression: the card cache was consulted before the privacy check, so a
+  // card kept being served for up to ten minutes after sharing was switched off
+  // or the account was deleted. Found by the end-to-end audit.
+  it('stops serving a cached card the moment sharing is switched off', async () => {
+    await createUser({ publicProfile: { enabled: true } });
+
+    await request(app).get('/api/card/ada_lovelace.png').expect(200);
+    // Second hit is served from the server cache.
+    await request(app).get('/api/card/ada_lovelace.png').expect(200);
+
+    await User.updateOne(
+      { usernameLower: 'ada_lovelace' },
+      { $set: { 'publicProfile.enabled': false } },
+    );
+
+    await request(app).get('/api/card/ada_lovelace.png').expect(404);
+    await request(app).get('/api/card/ada_lovelace.png?theme=gradient').expect(404);
+  });
+
+  it('stops serving a cached card once the account is deleted', async () => {
+    await createUser({ publicProfile: { enabled: true } });
+
+    await request(app).get('/api/card/ada_lovelace.png').expect(200);
+    await User.deleteOne({ usernameLower: 'ada_lovelace' });
+
+    await request(app).get('/api/card/ada_lovelace.png').expect(404);
+  });
+
+  it('shows a changed theme or name immediately instead of after the cache expires', async () => {
+    await createUser({ publicProfile: { enabled: true, cardTheme: 'dark-neon' } });
+
+    const before = await request(app).get('/api/card/ada_lovelace.png').expect(200);
+
+    // Using save() so that the timestamps plugin bumps updatedAt like a real edit.
+    const user = await User.findOne({ usernameLower: 'ada_lovelace' });
+    user.publicProfile.cardTheme = 'minimal-light';
+    await user.save();
+
+    const after = await request(app).get('/api/card/ada_lovelace.png').expect(200);
+    expect(Buffer.compare(before.body, after.body)).not.toBe(0);
+  });
+
+  it('keeps public responses cacheable only briefly', async () => {
+    await createUser({ publicProfile: { enabled: true } });
+
+    for (const path of ['/api/public/ada_lovelace', '/api/card/ada_lovelace.png', '/share/ada_lovelace']) {
+      const response = await request(app).get(path).expect(200);
+      expect(response.headers['cache-control']).toBe('public, max-age=60');
+    }
+  });
+
+  it('lets the owner pick the card theme from the URL without affecting others', async () => {
+    await createUser({ publicProfile: { enabled: true, cardTheme: 'dark-neon' } });
+
+    const dark = await request(app).get('/api/card/ada_lovelace.png').expect(200);
+    const light = await request(app).get('/api/card/ada_lovelace.png?theme=minimal-light').expect(200);
+    const darkAgain = await request(app).get('/api/card/ada_lovelace.png').expect(200);
+
+    expect(Buffer.compare(dark.body, light.body)).not.toBe(0);
+    expect(Buffer.compare(dark.body, darkAgain.body)).toBe(0);
+  });
+
   it('serves crawler HTML with per-user Open Graph tags', async () => {
     await createUser({ publicProfile: { enabled: true } });
 

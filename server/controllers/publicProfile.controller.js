@@ -1,6 +1,7 @@
 import env from '../config/env.js';
 import {
   cardDescription,
+  findPublicUser,
   getCardData,
   getPublicProfile,
 } from '../services/publicProfile.service.js';
@@ -16,12 +17,21 @@ const escapeHtml = (value = '') =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
+/**
+ * How long browsers and the CDN may keep a public response.
+ *
+ * Kept short on purpose: this is also the longest an image or page can outlive
+ * the owner switching sharing off or deleting the account, since a shared cache
+ * cannot be told to forget it. The server itself never serves stale (see below).
+ */
+const PUBLIC_CACHE = 'public, max-age=60';
+
 /** GET /api/public/:username */
 export const publicProfile = asyncHandler(async (req, res) => {
   const { username } = req.validated.params;
   const profile = await getPublicProfile(username);
 
-  res.set('Cache-Control', 'public, max-age=120');
+  res.set('Cache-Control', PUBLIC_CACHE);
   res.json(profile);
 });
 
@@ -32,17 +42,27 @@ export const publicProfile = asyncHandler(async (req, res) => {
 export const cardImage = asyncHandler(async (req, res) => {
   const { username } = req.validated.params;
 
-  const cacheKey = `card:${username.toLowerCase()}:${req.validated.query.theme ?? 'default'}`;
+  // Privacy gate FIRST, before the cache is even consulted. The image cache is
+  // keyed by username, so checking afterwards would keep serving a card for up
+  // to its whole lifetime after the owner turned sharing off or deleted the
+  // account. This is one indexed lookup, and it throws the usual 404.
+  const owner = await findPublicUser(username);
+
+  const theme = req.validated.query.theme ?? owner.publicProfile?.cardTheme ?? 'dark-neon';
+
+  // updatedAt is part of the key, so editing the display name, theme or any
+  // other profile field shows up on the next request instead of after the TTL.
+  const cacheKey = `card:${owner.usernameLower}:${theme}:${owner.updatedAt?.getTime() ?? 0}`;
   const cached = cache.get(cacheKey);
 
   if (cached) {
-    res.set({ 'Content-Type': cached.contentType, 'Cache-Control': 'public, max-age=600' });
+    res.set({ 'Content-Type': cached.contentType, 'Cache-Control': PUBLIC_CACHE });
     res.send(cached.buffer);
     return;
   }
 
   const card = await getCardData(username);
-  if (req.validated.query.theme) card.theme = req.validated.query.theme;
+  card.theme = theme;
 
   const image = await renderCardImage(card);
 
@@ -50,7 +70,7 @@ export const cardImage = asyncHandler(async (req, res) => {
 
   res.set({
     'Content-Type': image.contentType,
-    'Cache-Control': 'public, max-age=600',
+    'Cache-Control': PUBLIC_CACHE,
     'Content-Disposition': `inline; filename="codehub-${card.username}.png"`,
   });
   res.send(image.buffer);
@@ -73,7 +93,7 @@ export const shareHtml = asyncHandler(async (req, res) => {
   const profileUrl = `${env.CLIENT_URL}/u/${encodeURIComponent(card.username)}`;
   const imageUrl = `${env.SERVER_URL}/api/card/${encodeURIComponent(card.username)}.png`;
 
-  res.set({ 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'public, max-age=300' });
+  res.set({ 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': PUBLIC_CACHE });
 
   res.send(`<!doctype html>
 <html lang="en">

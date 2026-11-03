@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { ExternalLink, Eye, Save } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { changePasswordRequest } from '../api/auth.api.js';
 import { PageTransition, Reveal } from '../components/common/Motion.jsx';
@@ -12,6 +12,7 @@ import Badge from '../components/ui/Badge.jsx';
 import Button from '../components/ui/Button.jsx';
 import { Card, CardDescription, CardHeader, CardTitle } from '../components/ui/Card.jsx';
 import Input, { Select, Textarea } from '../components/ui/Input.jsx';
+import Modal from '../components/ui/Modal.jsx';
 import { Switch } from '../components/ui/Toggle.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useTheme } from '../context/ThemeContext.jsx';
@@ -31,6 +32,7 @@ const SETTINGS_SECTIONS = [
   { id: 'appearance', label: 'Appearance' },
   { id: 'sharing', label: 'Public profile' },
   { id: 'password', label: 'Password' },
+  { id: 'delete', label: 'Delete account' },
 ];
 
 /**
@@ -106,6 +108,125 @@ const ProfileDetailsCard = ({ user, onSave, isSaving }) => {
         </Button>
       </div>
     </Card>
+  );
+};
+
+/**
+ * Two-step account deletion: a plain button opens a dialog that says what goes,
+ * and the destructive button stays disabled until the username is typed out.
+ * The server re-checks everything (and the password, when there is one).
+ */
+const DeleteAccountCard = ({ user, hasPassword }) => {
+  const { deleteAccount } = useAuth();
+  const toast = useToast();
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [confirmUsername, setConfirmUsername] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const usernameMatches =
+    Boolean(user?.username) && confirmUsername.trim().toLowerCase() === user.username.toLowerCase();
+  const canSubmit = usernameMatches && (!hasPassword || currentPassword.length > 0);
+
+  const handleOpenChange = (next) => {
+    if (isDeleting) return;
+    setOpen(next);
+    if (!next) {
+      setConfirmUsername('');
+      setCurrentPassword('');
+      setError('');
+    }
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    if (!canSubmit || isDeleting) return;
+    setIsDeleting(true);
+    setError('');
+    try {
+      await deleteAccount(hasPassword ? { confirmUsername, currentPassword } : { confirmUsername });
+      toast.success('Account deleted', 'Your account and its data have been removed.');
+      navigate('/', { replace: true });
+    } catch (requestError) {
+      setError(requestError.message || 'Could not delete your account. Please try again.');
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <>
+      <Card id="delete" className="scroll-mt-24">
+        <CardHeader>
+          <div>
+            <CardTitle>Delete account</CardTitle>
+            <CardDescription>
+              Permanently removes your account and everything saved to it. This cannot be undone.
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <div className="flex justify-end">
+          <Button variant="danger" onClick={() => setOpen(true)}>
+            Delete account…
+          </Button>
+        </div>
+      </Card>
+      <Modal
+        open={open}
+        onOpenChange={handleOpenChange}
+        title="Delete your account?"
+        description="This is permanent. We cannot bring it back afterwards."
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="text-sm text-content-secondary">
+            <p>Deleting your account removes, right away:</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>your profile and sign-in details</li>
+              <li>your linked platform usernames</li>
+              <li>your bookmarks and notes</li>
+              <li>your contest reminders and practice suggestion history</li>
+            </ul>
+            <p className="mt-2">
+              Your public profile and share card stop working. You will be signed out on every
+              device.
+            </p>
+          </div>
+          <Input
+            label={`Type your username (${user?.username}) to confirm`}
+            value={confirmUsername}
+            onChange={(event) => setConfirmUsername(event.target.value)}
+            autoComplete="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            required
+          />
+          {hasPassword ? (
+            <Input
+              label="Current password"
+              type="password"
+              autoComplete="current-password"
+              value={currentPassword}
+              onChange={(event) => setCurrentPassword(event.target.value)}
+              required
+            />
+          ) : null}
+          {error ? (
+            <p role="alert" className="text-sm text-state-danger">
+              {error}
+            </p>
+          ) : null}
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)}>
+              Keep my account
+            </Button>
+            <Button type="submit" variant="danger" disabled={!canSubmit} loading={isDeleting}>
+              Delete my account
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    </>
   );
 };
 
@@ -403,6 +524,10 @@ export const SettingsPage = () => {
                 </Button>
               </div>
             </Card>
+          </Reveal>
+          {/* ---------------------------------------------------------- delete */}
+          <Reveal>
+            <DeleteAccountCard user={user} hasPassword={hasPassword} />
           </Reveal>
         </div>
       </section>

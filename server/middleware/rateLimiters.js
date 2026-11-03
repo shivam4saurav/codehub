@@ -86,6 +86,15 @@ export const registerLimiter = rateLimit({
   handler: handler('Too many accounts created from this network. Try again later.'),
 });
 
+/** Account deletion is irreversible and takes a password guess: keep it very tight. */
+export const accountDeletionLimiter = rateLimit({
+  ...base,
+  windowMs: 60 * 60_000,
+  limit: 5,
+  keyGenerator: userOrIpKey,
+  handler: handler('Too many account deletion attempts. Please try again in an hour.'),
+});
+
 /** Endpoints that hit third-party APIs - keyed per user when signed in. */
 export const externalFetchLimiter = rateLimit({
   ...base,

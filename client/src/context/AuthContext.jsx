@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useEffect, useMemo } from 'react';
 
 import {
+  deleteAccountRequest,
   fetchCurrentUser,
   loginRequest,
   logoutRequest,
@@ -73,6 +74,15 @@ export const AuthProvider = ({ children }) => {
     },
   });
 
+  const deleteAccountMutation = useMutation({
+    mutationFn: deleteAccountRequest,
+    // Only on success: a wrong password must leave the session untouched.
+    onSuccess: () => {
+      setUser(null);
+      queryClient.clear();
+    },
+  });
+
   const updateProfileMutation = useMutation({
     mutationFn: updateProfileRequest,
     onSuccess: setUser,
@@ -87,6 +97,7 @@ export const AuthProvider = ({ children }) => {
       register: registerMutation.mutateAsync,
       logout: logoutMutation.mutateAsync,
       updateProfile: updateProfileMutation.mutateAsync,
+      deleteAccount: deleteAccountMutation.mutateAsync,
       loginState: { isPending: loginMutation.isPending, error: loginMutation.error },
       registerState: { isPending: registerMutation.isPending, error: registerMutation.error },
       updateProfileState: {
@@ -106,6 +117,7 @@ export const AuthProvider = ({ children }) => {
       registerMutation.error,
       logoutMutation.mutateAsync,
       updateProfileMutation.mutateAsync,
+      deleteAccountMutation.mutateAsync,
       updateProfileMutation.isPending,
       updateProfileMutation.error,
       setUser,

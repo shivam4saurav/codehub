@@ -17,6 +17,9 @@ export const updateProfileRequest = (payload) =>
 export const changePasswordRequest = (payload) =>
   api.patch('/auth/password', payload).then((response) => response.data);
 
+export const deleteAccountRequest = (payload) =>
+  api.delete('/users/me', { data: payload }).then((response) => response.data);
+
 export default {
   registerRequest,
   loginRequest,
@@ -24,4 +27,5 @@ export default {
   fetchCurrentUser,
   updateProfileRequest,
   changePasswordRequest,
+  deleteAccountRequest,
 };

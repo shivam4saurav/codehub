@@ -51,8 +51,44 @@ const submissionFixture = () => {
   return submissions;
 };
 
+/**
+ * Five active topics where the three weakest (few, easy, old solves) have no
+ * problems in the catalog on this platform, and the two stronger ones do.
+ * Mirrors a real user who also solves on LeetCode: topics like Linked Lists
+ * come out weak but have no Codeforces problems at all.
+ */
+const sparseWeakTopicsFixture = ({ withStrongTopics = true } = {}) => {
+  const submissions = [];
+
+  const push = (id, rating, tags, daysAgo) =>
+    submissions.push({
+      verdict: 'OK',
+      creationTimeSeconds: nowSeconds - Math.floor((daysAgo * DAY) / 1000),
+      problem: { contestId: Number(id.replace(/\D/g, '')), index: id.replace(/\d/g, ''), name: `P ${id}`, rating, tags },
+    });
+
+  for (let index = 0; index < 3; index += 1) {
+    push(`${8100 + index}A`, 800, ['geometry'], 300 + index);
+    push(`${8200 + index}A`, 800, ['strings'], 300 + index);
+    push(`${8300 + index}A`, 800, ['trees'], 300 + index);
+  }
+
+  if (withStrongTopics) {
+    for (let index = 0; index < 14; index += 1) {
+      push(`${8400 + index}B`, 1800, ['greedy'], index);
+      push(`${8500 + index}B`, 1800, ['math'], index);
+    }
+  }
+
+  return submissions;
+};
+
 jest.unstable_mockModule('../../services/sources/codeforces.service.js', () => ({
-  fetchUserStatus: jest.fn(async () => submissionFixture()),
+  fetchUserStatus: jest.fn(async (handle) => {
+    if (handle === 'sparse_topics') return sparseWeakTopicsFixture();
+    if (handle === 'only_barren') return sparseWeakTopicsFixture({ withStrongTopics: false });
+    return submissionFixture();
+  }),
   fetchUserInfo: jest.fn(async (handle) => ({
     handle,
     rating: 1500,
@@ -155,6 +191,97 @@ describe('GET /api/recommendations', () => {
   it('requires at least one handle', async () => {
     const response = await request(app).get('/api/recommendations').expect(400);
     expect(response.body.error.code).toBe('NO_HANDLES');
+  });
+
+  // Regression: found by the end-to-end audit. The three weakest topics came
+  // from the combined history of every linked platform, but problems were only
+  // looked up for those three on the chosen platform. A user whose weakest
+  // topics had nothing there got an empty page instead of the next topics.
+  describe('when the weakest topics have no problems on this platform', () => {
+    it('tops the list up from the next-weakest topics instead of returning nothing', async () => {
+      const response = await request(app)
+        .get('/api/recommendations?codeforces=sparse_topics&count=6')
+        .expect(200);
+
+      const weak = response.body.weakTopics.map((topic) => topic.topicKey).sort();
+      expect(weak).toEqual(['geometry', 'strings', 'trees']);
+
+      expect(response.body.items.length).toBeGreaterThan(0);
+      for (const item of response.body.items) {
+        expect(['greedy', 'math']).toContain(item.topicKey);
+      }
+    });
+
+    it('says why the list came from other topics', async () => {
+      const response = await request(app)
+        .get('/api/recommendations?codeforces=sparse_topics&count=6')
+        .expect(200);
+
+      const note = response.body.meta.notes.join(' ');
+      expect(note).toMatch(/No unsolved Codeforces problems found for/);
+      expect(note).toMatch(/Geometry/);
+      expect(note).toMatch(/next weakest topics were used/);
+    });
+
+    it('still explains each suggestion with the numbers behind it', async () => {
+      const response = await request(app)
+        .get('/api/recommendations?codeforces=sparse_topics&count=6')
+        .expect(200);
+
+      for (const item of response.body.items) {
+        expect(item.reason).toMatch(/solved/);
+      }
+    });
+
+    it('never suggests a problem the user already solved while topping up', async () => {
+      await Problem.insertMany([
+        {
+          platform: PLATFORMS.CODEFORCES,
+          externalId: '8400B',
+          name: 'Already solved greedy',
+          url: 'https://codeforces.com/problemset/problem/8400B',
+          rawTags: ['greedy'],
+          canonicalTopics: ['greedy'],
+          rating: 1650,
+          difficulty: 'Medium',
+          solvedCount: 99_999,
+        },
+      ]);
+
+      const response = await request(app)
+        .get('/api/recommendations?codeforces=sparse_topics&count=24')
+        .expect(200);
+
+      expect(response.body.items.map((item) => item.externalId)).not.toContain('8400B');
+    });
+
+    it('reports an honest empty result when no topic has anything left', async () => {
+      const response = await request(app)
+        .get('/api/recommendations?codeforces=only_barren')
+        .expect(200);
+
+      expect(response.body.items).toEqual([]);
+      expect(response.body.meta.notes.join(' ')).toMatch(
+        /No unsolved Codeforces problems found for your weakest topics/,
+      );
+    });
+
+    it('does not widen an explicit topic request the user chose themselves', async () => {
+      const response = await request(app)
+        .get('/api/recommendations?codeforces=sparse_topics&topics=geometry')
+        .expect(200);
+
+      expect(response.body.items).toEqual([]);
+      expect(response.body.meta.notes.join(' ')).not.toMatch(/next weakest/);
+    });
+
+    it('leaves normal users untouched: no note when every weak topic had problems', async () => {
+      const response = await request(app)
+        .get('/api/recommendations?codeforces=testuser')
+        .expect(200);
+
+      expect(response.body.meta.notes.join(' ')).not.toMatch(/next weakest/);
+    });
   });
 
   it('identifies the weakest ACTIVE topics from real solve history', async () => {

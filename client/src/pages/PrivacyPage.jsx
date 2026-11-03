@@ -119,14 +119,27 @@ export const PrivacyPage = () => (
             cancel reminders. You can also leave sharing off and your profile stays private.
           </p>
           <p>
-            There is no button to delete a whole account yet. For now, email me at the address
-            below and I will delete the account.
+            If you are signed in, you can delete your whole account yourself: open Settings and
+            scroll to Delete account. You type your username to confirm, plus your password if the
+            account has one. It removes the account, the platform usernames you linked, your
+            bookmarks and notes, your reminders and your suggestion history. It takes effect
+            immediately and I cannot undo it.
+          </p>
+          <p>
+            The cached public stats are saved by platform and platform username, not by account.
+            Deleting your account does not remove them. They are copies of numbers that are already
+            public on that platform, they are no longer linked to any CodeHub account, and they
+            only come back if someone links that same username on that platform later.
+          </p>
+          <p>
+            If you cannot sign in, you can still email me at the address below and I will delete
+            the account by hand.
           </p>
         </Section>
 
         <Section title="Contact">
           <p>
-            Questions or a deletion request? Write to{' '}
+            Questions, or cannot sign in to delete your account? Write to{' '}
             <a href={`mailto:${CONTACT_EMAIL}`} className="text-link">
               {CONTACT_EMAIL}
             </a>
