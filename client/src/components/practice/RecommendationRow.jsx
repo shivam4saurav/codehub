@@ -51,7 +51,7 @@ export const RecommendationRow = ({
             rel="noopener noreferrer"
             className={cn(
               'focus-ring group inline-flex min-w-0 items-baseline gap-1 rounded font-medium text-content-primary hover:underline',
-              isDone && 'line-through decoration-content-muted',
+              isDone && 'text-content-secondary',
             )}
           >
             <span className="truncate">{item.name}</span>

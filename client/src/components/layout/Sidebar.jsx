@@ -15,12 +15,14 @@ export const BrandLink = ({ onClick, className }) => (
     className={cn('focus-ring flex items-center gap-2 rounded-md', className)}
   >
     <span
-      className="grid h-7 w-7 place-items-center rounded-[5px] bg-brand-600 font-mono text-[13px] font-semibold leading-none text-white"
+      className="grid h-8 w-8 place-items-center rounded-lg bg-brand-600 font-mono text-[13px] font-semibold leading-none text-white shadow-card"
       aria-hidden="true"
     >
       ch
     </span>
-    <span className="text-[1.05rem] font-semibold tracking-tight text-content-primary">CodeHub</span>
+    <span className="text-[1.1rem] font-bold tracking-tight text-content-primary">
+      Code<span className="text-brand-300">Hub</span>
+    </span>
   </Link>
 );
 
@@ -35,27 +37,22 @@ const NavItem = ({ item, isAuthenticated, onNavigate }) => {
       title={locked ? `${item.label}: sign in to use this` : item.hint}
       className={({ isActive }) =>
         cn(
-          'focus-ring group relative flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-sm transition-colors',
+          'focus-ring group relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors',
           isActive
-            ? 'bg-surface-inset font-medium text-content-primary'
+            ? 'bg-brand-500/10 font-semibold text-brand-300'
             : 'text-content-secondary hover:bg-surface-inset/70 hover:text-content-primary',
         )
       }
     >
       {({ isActive }) => (
         <>
-          {isActive ? (
-            <span
-              className="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-brand-500"
-              aria-hidden="true"
-            />
-          ) : null}
+          
           <item.icon
             size={16}
             aria-hidden="true"
             className={cn(
               'shrink-0',
-              isActive ? 'text-content-primary' : 'text-content-muted group-hover:text-content-secondary',
+              isActive ? 'text-brand-300' : 'text-content-muted group-hover:text-content-secondary',
             )}
           />
           <span className="flex-1 truncate">{item.label}</span>
@@ -93,7 +90,7 @@ export const SidebarContent = ({ onNavigate, onOpenSearch }) => {
         <button
           type="button"
           onClick={onOpenSearch}
-          className="focus-ring flex w-full items-center gap-2 rounded-md border border-edge bg-surface-base px-2.5 py-1.5 text-sm text-content-muted transition-colors hover:border-edge-strong hover:text-content-secondary"
+          className="focus-ring flex w-full items-center gap-2 rounded-xl border border-edge bg-surface-base px-3 py-2 text-sm text-content-muted transition-colors hover:border-edge-strong hover:text-content-secondary"
         >
           <Search size={14} aria-hidden="true" />
           <span className="flex-1 text-left">Go to page…</span>
@@ -105,9 +102,9 @@ export const SidebarContent = ({ onNavigate, onOpenSearch }) => {
         {NAV_SECTIONS.map((section) => (
           <div key={section.id} className="mb-4">
             {section.label ? (
-              <p className="mb-1 px-2.5 text-xs font-medium text-content-muted">{section.label}</p>
+              <p className="mb-1.5 px-3 text-[11px] font-semibold uppercase tracking-wider text-content-muted">{section.label}</p>
             ) : null}
-            <div className="space-y-px">
+            <div className="space-y-1">
               {section.items.map((item) => (
                 <NavItem
                   key={item.to}
@@ -124,7 +121,7 @@ export const SidebarContent = ({ onNavigate, onOpenSearch }) => {
       <div className="border-t border-edge p-3">
         {isAuthenticated ? (
           <div className="flex items-center gap-2.5 px-1 py-1">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-surface-inset text-sm font-semibold uppercase text-content-primary">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-brand-500/15 text-sm font-semibold uppercase text-brand-300">
               {(user.displayName || user.username).slice(0, 1)}
             </span>
             <div className="min-w-0 flex-1">
@@ -173,7 +170,7 @@ export const SidebarContent = ({ onNavigate, onOpenSearch }) => {
         <button
           type="button"
           onClick={toggleTheme}
-          className="focus-ring mt-2 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-content-muted transition-colors hover:bg-surface-inset hover:text-content-primary"
+          className="focus-ring mt-2 flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-xs text-content-muted transition-colors hover:bg-surface-inset hover:text-content-primary"
         >
           {theme === 'dark' ? <Sun size={14} aria-hidden="true" /> : <Moon size={14} aria-hidden="true" />}
           {theme === 'dark' ? 'Light theme' : 'Dark theme'}

@@ -99,7 +99,7 @@ export const ProfileShareCard = forwardRef(({ card, theme = 'dark-neon', scale =
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        fontFamily: '"IBM Plex Sans", system-ui, sans-serif',
+        fontFamily: 'Poppins, system-ui, sans-serif',
         boxSizing: 'border-box',
       }}
     >

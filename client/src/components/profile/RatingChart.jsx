@@ -36,7 +36,17 @@ const ChartTooltip = ({ active, payload }) => {
   );
 };
 
-export const RatingChart = ({ history = [], accent = '#2b9a5c', height = 220, label = 'Rating' }) => {
+/**
+ * `interactive={false}` drops the tooltip and recharts' keyboard layer, for
+ * decorative uses such as a chart inside a link.
+ */
+export const RatingChart = ({
+  history = [],
+  accent = '#f97316',
+  height = 220,
+  label = 'Rating',
+  interactive = true,
+}) => {
   if (history.length < 2) {
     return (
       <EmptyState
@@ -66,7 +76,11 @@ export const RatingChart = ({ history = [], accent = '#2b9a5c', height = 220, la
   return (
     <div style={{ height }} role="img" aria-label={`${label} history across ${data.length} contests`}>
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={data} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
+        <AreaChart
+          data={data}
+          margin={{ top: 8, right: 8, left: -18, bottom: 0 }}
+          accessibilityLayer={interactive}
+        >
           <defs>
             <linearGradient id={`rating-fill-${accent.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={accent} stopOpacity={0.35} />
@@ -89,7 +103,7 @@ export const RatingChart = ({ history = [], accent = '#2b9a5c', height = 220, la
             width={48}
           />
 
-          <Tooltip content={<ChartTooltip />} />
+          {interactive ? <Tooltip content={<ChartTooltip />} /> : null}
 
           <Area
             type="monotone"

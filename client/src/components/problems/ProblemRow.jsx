@@ -81,7 +81,7 @@ export const ProblemRow = ({
             rel="noopener noreferrer"
             className={cn(
               'focus-ring group inline-flex items-center gap-1.5 rounded text-sm font-medium text-content-primary hover:text-brand-200',
-              isDone && 'line-through decoration-content-muted',
+              isDone && 'text-content-secondary',
             )}
           >
             {problem.name}

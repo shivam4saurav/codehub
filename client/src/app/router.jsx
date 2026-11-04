@@ -15,6 +15,7 @@ const PracticePage = lazy(() => import('../pages/PracticePage.jsx'));
 const ProblemsPage = lazy(() => import('../pages/ProblemsPage.jsx'));
 const ProfilePage = lazy(() => import('../pages/ProfilePage.jsx'));
 const PublicProfilePage = lazy(() => import('../pages/PublicProfilePage.jsx'));
+const ProfileCardPage = lazy(() => import('../pages/ProfileCardPage.jsx'));
 const RemindersPage = lazy(() => import('../pages/RemindersPage.jsx'));
 const SettingsPage = lazy(() => import('../pages/SettingsPage.jsx'));
 const PrivacyPage = lazy(() => import('../pages/PrivacyPage.jsx'));
@@ -35,6 +36,10 @@ export const AppRoutes = () => (
 
         {/* Public, opt-in. Crawlers are served meta tags by GET /share/:username. */}
         <Route path="/u/:username" element={<PublicProfilePage />} />
+        <Route path="/u/:username/card" element={<ProfileCardPage />} />
+        {/* The landing page preview's sample profile, rendered by the same pages. */}
+        <Route path="/example" element={<PublicProfilePage example />} />
+        <Route path="/example/card" element={<ProfileCardPage example />} />
 
         {/* Must stay reachable without signing in: Google requires a public
             privacy policy URL for the OAuth consent screen. */}

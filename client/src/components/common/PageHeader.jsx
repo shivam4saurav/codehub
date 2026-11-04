@@ -10,7 +10,7 @@ export const PageHeader = ({ eyebrow, title, description, actions, children, cla
     <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
       <div className="min-w-0">
         {eyebrow ? <p className="eyebrow mb-1.5">{eyebrow}</p> : null}
-        <h1 className="text-2xl font-semibold tracking-tight text-content-primary">{title}</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-content-primary sm:text-[1.75rem]">{title}</h1>
         {description ? (
           <p className="mt-1.5 max-w-2xl text-[0.9375rem] leading-relaxed text-content-secondary">
             {description}

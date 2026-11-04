@@ -1,13 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, EyeOff, Flame, Trophy } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { ArrowRight, ArrowUpRight, Check, EyeOff, Flame, Sparkles, Trophy } from 'lucide-react';
+import { useMemo, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { fetchPublicProfile } from '../api/public.api.js';
 import { PageTransition, Reveal } from '../components/common/Motion.jsx';
+import { SAMPLE_PUBLIC_PROFILE } from '../components/landing/sampleProfile.js';
 import ActivityHeatmap from '../components/profile/ActivityHeatmap.jsx';
-import ProfileShareCard, { CARD_THEMES } from '../components/share/ProfileShareCard.jsx';
-import ScaledCardPreview from '../components/share/ScaledCardPreview.jsx';
+import ProfileCard from '../components/share/ProfileCard.jsx';
 import ShareActions from '../components/share/ShareActions.jsx';
 import AnimatedNumber from '../components/ui/AnimatedNumber.jsx';
 import Badge from '../components/ui/Badge.jsx';
@@ -16,7 +16,6 @@ import { Card, CardDescription, CardHeader, CardTitle } from '../components/ui/C
 import { ProgressBar } from '../components/ui/Progress.jsx';
 import { SkeletonCard } from '../components/ui/Skeleton.jsx';
 import { EmptyState, ErrorState } from '../components/ui/States.jsx';
-import cn from '../utils/cn.js';
 import { formatNumber } from '../utils/format.js';
 import { PLATFORMS } from '../utils/platform.js';
 
@@ -32,23 +31,25 @@ const summarise = (card) => {
   return parts.join(' · ');
 };
 
-export const PublicProfilePage = () => {
+/**
+ * `example` renders the landing page's sample profile (/example) through the
+ * same layout, without fetching and without share actions.
+ */
+export const PublicProfilePage = ({ example = false }) => {
   const { username } = useParams();
   const cardRef = useRef(null);
-
-  const { data, isLoading, error, refetch } = useQuery({
+  const query = useQuery({
     queryKey: ['public-profile', username],
     queryFn: () => fetchPublicProfile(username),
     retry: false,
     staleTime: 2 * 60_000,
+    enabled: !example,
   });
-
-  /**
-   * The owner's saved theme is the default; a visitor's click overrides it for
-   * their session only. Deriving this avoids syncing server data into state.
-   */
-  const [themeOverride, setThemeOverride] = useState(null);
-  const theme = themeOverride ?? data?.owner?.cardTheme ?? 'dark-neon';
+  const data = example ? SAMPLE_PUBLIC_PROFILE : query.data;
+  const isLoading = !example && query.isLoading;
+  const error = example ? null : query.error;
+  const { refetch } = query;
+  const cardPath = example ? '/example/card' : `/u/${data?.owner?.username ?? username}/card`;
 
   const card = useMemo(() => {
     if (!data) return null;
@@ -130,7 +131,7 @@ export const PublicProfilePage = () => {
                   {data.owner.displayName}
                 </h1>
                 <Badge variant="brand" size="sm">
-                  Public profile
+                  {example ? 'Example' : 'Public profile'}
                 </Badge>
               </div>
               <p className="mt-0.5 font-mono text-sm text-content-muted">@{data.owner.username}</p>
@@ -140,13 +141,29 @@ export const PublicProfilePage = () => {
             </div>
           </div>
 
-          <ShareActions
-            username={data.owner.username}
-            cardRef={cardRef}
-            displayName={data.owner.displayName}
-            summary={summary}
-          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button as={Link} to={cardPath} variant="secondary" size="sm" iconRight={ArrowUpRight}>
+              View card
+            </Button>
+            {example ? null : (
+              <ShareActions
+                username={data.owner.username}
+                cardRef={cardRef}
+                displayName={data.owner.displayName}
+                summary={summary}
+              />
+            )}
+          </div>
         </header>
+        {example ? (
+          <p className="-mt-2 mb-6 inline-flex flex-wrap items-center gap-x-2 gap-y-1 rounded-full border border-edge bg-surface-raised px-4 py-1.5 text-xs text-content-secondary shadow-card">
+            <Sparkles size={13} className="text-brand-300" aria-hidden="true" />
+            Example profile with made-up numbers.
+            <Link to="/register" className="text-link">
+              Make yours
+            </Link>
+          </p>
+        ) : null}
 
         {data.empty ? (
           <EmptyState
@@ -157,44 +174,59 @@ export const PublicProfilePage = () => {
           <>
             {/* ------------------------------------------------ the card */}
             <Reveal>
-              <Card>
-                <CardHeader>
-                  <div>
-                    <CardTitle>
-                      Share card
-                    </CardTitle>
-                    <CardDescription>
-                      Pick a style, then download the image or share the link on LinkedIn or X.
-                    </CardDescription>
+              <Card className="overflow-hidden">
+                <div className="grid items-center gap-8 md:grid-cols-[auto_minmax(0,1fr)]">
+                  <div className="flex justify-center rounded-2xl bg-surface-inset/60 p-6 sm:p-8">
+                    <ProfileCard
+                      ref={cardRef}
+                      displayName={data.owner.displayName}
+                      username={data.owner.username}
+                      totalSolved={data.combined?.totalSolved ?? 0}
+                      activeDays={data.combined?.streaks?.activeDays ?? 0}
+                      handles={data.handles ?? {}}
+                      topics={data.combined?.topTopics ?? []}
+                      className="shadow-lift"
+                    />
                   </div>
-
-                  <div className="flex flex-wrap gap-1.5">
-                    {CARD_THEMES.map((option) => (
-                      <button
-                        key={option.key}
-                        type="button"
-                        onClick={() => setThemeOverride(option.key)}
-                        aria-pressed={theme === option.key}
-                        className={cn('chip focus-ring', theme === option.key && 'chip-active')}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
+                  <div className="max-w-md">
+                    <p className="eyebrow">Share card</p>
+                    <h2 className="mt-2 text-2xl font-bold tracking-tight text-content-primary">
+                      {example ? 'Your card could look like this' : 'One card for every platform'}
+                    </h2>
+                    <p className="mt-2 text-sm leading-relaxed text-content-secondary">
+                      Solved count, active days, the platforms you are on and your strongest topics.
+                      {example
+                        ? ' Sign up, add your usernames and turn on sharing to get yours.'
+                        : ' Download it as an image, or share the link on LinkedIn, X or WhatsApp.'}
+                    </p>
+                    <ul className="mt-5 space-y-2.5 text-sm text-content-secondary">
+                      {[
+                        `${formatNumber(data.combined?.totalSolved ?? 0)} problems solved`,
+                        `${formatNumber(data.combined?.streaks?.activeDays ?? 0)} active days`,
+                        `${activePlatforms.length} platform${activePlatforms.length === 1 ? '' : 's'} linked`,
+                      ].map((point) => (
+                        <li key={point} className="flex items-center gap-2.5">
+                          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-500/15 text-brand-300">
+                            <Check size={12} strokeWidth={3} aria-hidden="true" />
+                          </span>
+                          {point}
+                        </li>
+                      ))}
+                    </ul>
+                    <div className="mt-6 flex flex-wrap gap-2">
+                      <Button as={Link} to={cardPath} variant="secondary" size="sm" iconRight={ArrowUpRight}>
+                        Open card page
+                      </Button>
+                      {example ? (
+                        <Button as={Link} to="/register" size="sm" iconRight={ArrowRight}>
+                          Make yours
+                        </Button>
+                      ) : null}
+                    </div>
                   </div>
-                </CardHeader>
-
-                {/* Scaled for display; the captured node stays a true 1200x630. */}
-                <ScaledCardPreview className="rounded-xl border border-edge">
-                  <ProfileShareCard ref={cardRef} card={card} theme={theme} />
-                </ScaledCardPreview>
-
-                <p className="mt-3 text-xs text-content-muted">
-                  The preview scales to fit; the exported image is always 1200x630, the size
-                  LinkedIn and X expect.
-                </p>
+                </div>
               </Card>
             </Reveal>
-
             {/* ----------------------------------------------- summary */}
             <Reveal className="mt-6">
               <div className="grid gap-4 sm:grid-cols-3">

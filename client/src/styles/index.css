@@ -1,92 +1,69 @@
-@import '@fontsource/ibm-plex-sans/400.css';
-@import '@fontsource/ibm-plex-sans/500.css';
-@import '@fontsource/ibm-plex-sans/600.css';
-@import '@fontsource/ibm-plex-sans/700.css';
-@import '@fontsource/ibm-plex-mono/400.css';
-@import '@fontsource/ibm-plex-mono/500.css';
-@import '@fontsource/ibm-plex-mono/600.css';
+@import '@fontsource/poppins/400.css';
+@import '@fontsource/poppins/500.css';
+@import '@fontsource/poppins/600.css';
+@import '@fontsource/poppins/700.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  /*
-   * Two themes, one set of tokens. Each value is an RGB triplet so Tailwind's
-   * alpha modifiers (bg-surface-raised/80) keep working.
-   *
-   * Light ("paper") is the default: warm off-white, near-black ink, and one
-   * accent - Accepted green. Dark ("ink") keeps the same warmth instead of the
-   * usual blue-grey.
-   */
   :root,
   :root.light {
-    --surface-base: 247 246 242;
+    --surface-base: 243 244 246;
     --surface-raised: 255 255 255;
     --surface-overlay: 255 255 255;
-    --surface-inset: 241 239 233;
-    --content-primary: 28 27 24;
-    --content-secondary: 82 79 72;
-    --content-muted: 120 115 106;
+    --surface-inset: 236 238 241;
+    --content-primary: 17 24 39;
+    --content-secondary: 75 85 99;
+    --content-muted: 88 96 110;
     --content-inverse: 255 255 255;
-    --edge: 226 223 214;
-    --edge-strong: 204 200 189;
-
-    /* Accent text shades: dark greens that pass contrast on white. */
-    --brand-100: 12 74 46;
-    --brand-200: 18 94 59;
-    --brand-300: 23 110 69;
-
+    --edge: 229 231 235;
+    --edge-strong: 209 213 219;
+    /* Accent text shades: deep oranges that pass contrast on white. */
+    --brand-100: 124 45 18;
+    --brand-200: 154 52 18;
+    --brand-300: 194 65 12;
     --accent-cyan: 14 116 144;
     --accent-lime: 77 124 15;
     --accent-amber: 166 95 0;
     --accent-rose: 190 18 60;
-
     --state-success: 21 128 61;
     --state-warning: 166 95 0;
     --state-danger: 190 38 38;
     --state-info: 37 89 170;
-
     --platform-leetcode: 168 92 0;
     --platform-codeforces: 21 101 160;
     --platform-codechef: 124 74 42;
-
     color-scheme: light;
   }
-
   :root.dark {
-    --surface-base: 20 19 17;
-    --surface-raised: 28 27 24;
-    --surface-overlay: 36 34 31;
-    --surface-inset: 24 23 21;
-    --content-primary: 236 234 228;
-    --content-secondary: 178 173 163;
-    --content-muted: 136 131 122;
+    --surface-base: 17 16 16;
+    --surface-raised: 24 24 27;
+    --surface-overlay: 39 39 42;
+    --surface-inset: 33 33 36;
+    --content-primary: 244 244 245;
+    --content-secondary: 170 170 180;
+    --content-muted: 138 138 148;
     --content-inverse: 255 255 255;
-    --edge: 46 44 40;
-    --edge-strong: 66 63 58;
-
-    --brand-100: 209 245 223;
-    --brand-200: 160 228 189;
-    --brand-300: 98 201 140;
-
+    --edge: 39 39 42;
+    --edge-strong: 63 63 70;
+    --brand-100: 255 237 213;
+    --brand-200: 253 186 116;
+    --brand-300: 251 146 60;
     --accent-cyan: 103 196 214;
     --accent-lime: 170 210 90;
     --accent-amber: 232 168 56;
     --accent-rose: 240 128 150;
-
-    --state-success: 98 201 140;
+    --state-success: 74 222 128;
     --state-warning: 232 168 56;
     --state-danger: 240 113 103;
     --state-info: 125 170 240;
-
     --platform-leetcode: 255 170 50;
     --platform-codeforces: 90 170 230;
     --platform-codechef: 210 160 115;
-
     color-scheme: dark;
   }
-
   * {
     border-color: rgb(var(--edge) / 1);
   }
@@ -111,7 +88,7 @@
   }
 
   ::selection {
-    background: rgb(43 154 92 / 0.25);
+    background: rgb(249 115 22 / 0.25);
   }
 
   :focus-visible {
@@ -139,9 +116,9 @@
 }
 
 @layer components {
-  /* The standard panel: flat, 1px border, no glow. */
+  /* The standard panel: white card, soft shadow, rounded corners. */
   .glass {
-    @apply rounded-2xl border border-edge bg-surface-raised;
+    @apply rounded-2xl border border-edge bg-surface-raised shadow-card;
   }
 
   .glass-strong {
@@ -149,16 +126,17 @@
   }
 
   .card-hover {
-    @apply transition-colors duration-150 hover:border-edge-strong;
+    @apply transition duration-200 hover:-translate-y-0.5 hover:border-brand-500/40 hover:shadow-lift;
   }
 
   .gradient-text {
-    @apply text-brand-300;
+    @apply bg-gradient-to-r from-brand-600 to-[#ea580c] bg-clip-text text-transparent
+      dark:from-brand-400 dark:to-amber-300;
   }
 
   .chip {
-    @apply inline-flex items-center gap-1.5 rounded-md border border-edge bg-surface-raised
-      px-2.5 py-1 text-xs font-medium text-content-secondary transition-colors
+    @apply inline-flex items-center gap-1.5 rounded-full border border-edge bg-surface-raised
+      px-3 py-1 text-xs font-medium text-content-secondary transition-colors
       hover:border-edge-strong hover:text-content-primary;
   }
 
@@ -188,7 +166,7 @@
 
   /* Small section label above a heading. */
   .eyebrow {
-    @apply font-mono text-xs font-medium text-content-muted;
+    @apply text-xs font-semibold uppercase tracking-wider text-brand-300;
   }
 
   /* Plain text link in body copy. */
@@ -208,6 +186,10 @@
   }
 
   .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  /* Equal-width digits so countdowns and ratings line up without a monospace font. */
+  .font-mono {
     font-variant-numeric: tabular-nums;
   }
 

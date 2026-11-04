@@ -4,11 +4,13 @@ import { Menu, Search, X } from 'lucide-react';
 import { useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
+import { useAuth } from '../../context/AuthContext.jsx';
 import CommandPalette from '../common/CommandPalette.jsx';
 import ErrorBoundary from '../common/ErrorBoundary.jsx';
 import ServerWakeNotice from '../common/ServerWakeNotice.jsx';
 import Footer from './Footer.jsx';
 import { BrandLink, SidebarContent } from './Sidebar.jsx';
+import TopNav from './TopNav.jsx';
 
 /** Sign-in pages are focused tasks, so they skip the sidebar. */
 const AUTH_ROUTES = ['/login', '/register'];
@@ -19,12 +21,15 @@ const AUTH_ROUTES = ['/login', '/register'];
  * Desktop: a fixed sidebar that names and describes every feature, so the
  * answer to "where do I go for X?" is always visible.
  * Mobile: a top bar with a menu button that opens the same sidebar as a drawer.
+ * Guests: a website-style top navbar instead of the sidebar. It is also shown
+ * while the session check runs, because most first visits are from guests.
  */
 export const AppLayout = () => {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
+  const { isAuthenticated } = useAuth();
   const isAuthRoute = AUTH_ROUTES.includes(location.pathname);
 
   const page = (
@@ -53,24 +58,41 @@ export const AppLayout = () => {
     setMenuOpen(false);
     setSearchOpen(true);
   };
+  const skipLink = (
+    <a
+      href="#main-content"
+      className="sr-only-focusable focus-ring fixed left-4 top-3 z-[60] rounded-md bg-surface-overlay px-3 py-1.5 text-sm text-content-primary"
+    >
+      Skip to content
+    </a>
+  );
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        {skipLink}
+        <TopNav onOpenSearch={openSearch} />
+        <main id="main-content" className="flex-1">
+          {page}
+        </main>
+        <Footer />
+        <CommandPalette open={searchOpen} onOpenChange={setSearchOpen} />
+        <ServerWakeNotice />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
-      <a
-        href="#main-content"
-        className="sr-only-focusable focus-ring fixed left-4 top-3 z-[60] rounded-md bg-surface-overlay px-3 py-1.5 text-sm text-content-primary"
-      >
-        Skip to content
-      </a>
+      {skipLink}
 
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 border-r border-edge bg-surface-base lg:block">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-60 border-r border-edge bg-surface-raised lg:block">
         <SidebarContent onOpenSearch={openSearch} />
       </aside>
 
       {/* Mobile top bar + drawer */}
       <Dialog.Root open={menuOpen} onOpenChange={setMenuOpen}>
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-edge bg-surface-base px-4 lg:hidden">
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-edge bg-surface-raised/90 px-4 backdrop-blur lg:hidden">
           <Dialog.Trigger asChild>
             <button
               type="button"
@@ -95,7 +117,7 @@ export const AppLayout = () => {
 
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-40 bg-black/50 lg:hidden" />
-          <Dialog.Content className="fixed inset-y-0 left-0 z-50 w-[85vw] max-w-xs border-r border-edge bg-surface-base shadow-overlay focus:outline-none data-[state=open]:animate-slide-in-left lg:hidden">
+          <Dialog.Content className="fixed inset-y-0 left-0 z-50 w-[85vw] max-w-xs border-r border-edge bg-surface-raised shadow-overlay focus:outline-none data-[state=open]:animate-slide-in-left lg:hidden">
             <Dialog.Title className="sr-only">Menu</Dialog.Title>
             <Dialog.Description className="sr-only">All CodeHub pages</Dialog.Description>
             <Dialog.Close

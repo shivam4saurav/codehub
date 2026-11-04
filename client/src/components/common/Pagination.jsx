@@ -65,7 +65,7 @@ export const Pagination = ({ pagination, onPageChange, className }) => {
               className={cn(
                 'focus-ring h-9 min-w-9 rounded-lg px-2.5 text-sm font-medium transition',
                 entry === page
-                  ? 'bg-brand-gradient text-white'
+                  ? 'bg-brand-600 text-white shadow-card'
                   : 'text-content-secondary hover:bg-surface-raised hover:text-content-primary',
               )}
             >

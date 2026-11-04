@@ -1,10 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
-import { ArrowRight, Check, Lock } from 'lucide-react';
+import {
+  ArrowRight,
+  BellRing,
+  CalendarClock,
+  Check,
+  LayoutDashboard,
+  ListFilter,
+  Lock,
+  Share2,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import { fetchHandles } from '../api/handles.api.js';
 import { PageTransition } from '../components/common/Motion.jsx';
 import PageHeader from '../components/common/PageHeader.jsx';
+import HeroPreview from '../components/landing/HeroPreview.jsx';
 import QuickStartForm from '../components/practice/QuickStartForm.jsx';
 import RecommendationRow from '../components/practice/RecommendationRow.jsx';
 import Button from '../components/ui/Button.jsx';
@@ -83,27 +93,32 @@ const HOW_IT_WORKS = [
 const OTHER_PAGES = [
   {
     to: '/profile',
+    icon: LayoutDashboard,
     label: 'My dashboard',
     body: 'Ratings, solved counts and one activity calendar for Codeforces, LeetCode and CodeChef.',
   },
   {
     to: '/problems',
+    icon: ListFilter,
     label: 'Problems',
     body: 'Filter problems by topic, rating or difficulty. Bookmark them and keep notes.',
   },
   {
     to: '/contests',
+    icon: CalendarClock,
     label: 'Contest calendar',
     body: 'Upcoming contests from all three sites in your local time, with calendar links.',
   },
   {
     to: '/reminders',
+    icon: BellRing,
     label: 'Contest reminders',
     body: 'An email 1 day, 1 hour or 15 minutes before a contest starts.',
     requiresAuth: true,
   },
   {
     to: '/settings#sharing',
+    icon: Share2,
     label: 'Share card',
     body: 'A public profile page and an image you can post on LinkedIn.',
     requiresAuth: true,
@@ -205,79 +220,192 @@ const ExamplePanel = () => (
 );
 
 /* ---------------------------------------------------------------- guest */
+const SUPPORTED = ['codeforces', 'leetcode', 'codechef'];
+
+const SectionHeading = ({ id, eyebrow, title, body }) => (
+  <div className="mx-auto max-w-2xl text-center">
+    <p className="eyebrow">{eyebrow}</p>
+    <h2 id={id} className="mt-2 text-balance text-3xl font-bold tracking-tight text-content-primary">
+      {title}
+    </h2>
+    {body ? <p className="mt-3 text-content-secondary">{body}</p> : null}
+  </div>
+);
 
 const GuestHome = () => (
   <>
-    <section className="grid items-start gap-10 pt-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-14 lg:pt-8">
-      <div className="max-w-xl">
-        <p className="eyebrow">for Codeforces and LeetCode</p>
-        <h1 className="mt-3 text-balance text-4xl font-semibold leading-[1.1] tracking-tight text-content-primary sm:text-5xl">
-          Know what to solve next.
+    {/* Hero */}
+    <section className="relative overflow-hidden px-4 pb-24 pt-14 sm:px-6 lg:px-8 lg:pt-20">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(ellipse_at_top,rgb(249_115_22/0.12),transparent_65%)]"
+        aria-hidden="true"
+      />
+      <div className="mx-auto max-w-3xl text-center">
+        <p className="eyebrow">for Codeforces, LeetCode and CodeChef</p>
+        <h1 className="mt-4 text-balance text-4xl font-bold leading-[1.08] tracking-tight text-content-primary sm:text-6xl">
+          Know what to <span className="gradient-text">solve next.</span>
         </h1>
-        <p className="mt-4 text-lg leading-relaxed text-content-secondary">
-          CodeHub reads the problems you have already solved, finds the topics you keep avoiding,
-          and picks unsolved ones a little above your rating.
+        <p className="mx-auto mt-5 max-w-2xl text-balance text-lg leading-relaxed text-content-secondary sm:text-xl">
+          Code<span className="font-semibold text-brand-300">Hub</span> reads the problems you have
+          already solved, finds the topics you keep avoiding, and picks unsolved ones a little above
+          your rating.
         </p>
-
-        <QuickStartForm className="mt-8" />
-
-        <p className="mt-8 text-sm text-content-muted">
-          Have an account?{' '}
-          <Link to="/login" className="text-link">
-            Sign in
-          </Link>
-          . New here?{' '}
-          <Link to="/register" className="text-link">
-            Create one
-          </Link>{' '}
-          to save your usernames and progress.
-        </p>
+        <div className="mx-auto mt-8 max-w-xl text-left">
+          <QuickStartForm />
+        </div>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+          <Button as={Link} to="/contests" variant="secondary" icon={CalendarClock}>
+            Contest calendar
+          </Button>
+          <Button as={Link} to="/register" variant="ghost" iconRight={ArrowRight}>
+            Create a free account
+          </Button>
+        </div>
       </div>
 
-      <ExamplePanel />
+      <HeroPreview className="mt-16" />
     </section>
 
-    <section aria-labelledby="how-heading" className="mt-16 border-t border-edge pt-10">
-      <h2 id="how-heading" className="text-xl font-semibold text-content-primary">
-        How it picks problems
-      </h2>
-      <ol className="mt-6 grid gap-8 md:grid-cols-3">
-        {HOW_IT_WORKS.map((step, index) => (
-          <li key={step.title}>
-            <p className="font-mono text-sm text-brand-300">{index + 1}.</p>
-            <h3 className="mt-1 text-base font-semibold text-content-primary">{step.title}</h3>
-            <p className="mt-1.5 text-sm leading-relaxed text-content-secondary">{step.body}</p>
-          </li>
-        ))}
-      </ol>
-    </section>
-
-    <div className="mt-16 grid gap-12 border-t border-edge pt-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
-      <section aria-labelledby="also-heading">
-        <h2 id="also-heading" className="text-base font-semibold text-content-primary">
-          Also in CodeHub
-        </h2>
-        <ul className="mt-2 divide-y divide-edge border-y border-edge">
-          {OTHER_PAGES.map((page) => (
-            <li key={page.to}>
-              <Link
-                to={page.to}
-                className="focus-ring group flex items-baseline gap-4 rounded py-3 transition-colors"
+    {/* Supported platforms */}
+    <section aria-label="Supported platforms" className="border-y border-edge bg-surface-raised">
+      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-x-10 gap-y-3 px-4 py-6">
+        <span className="text-sm text-content-muted">Works with</span>
+        {SUPPORTED.map((key) => {
+          const platform = getPlatform(key);
+          return (
+            <span key={key} className="flex items-center gap-2 text-base font-semibold text-content-primary">
+              <span
+                className="grid h-7 w-7 place-items-center rounded-lg font-mono text-[11px] font-bold text-white"
+                style={{ background: platform.accent }}
+                aria-hidden="true"
               >
-                <span className="w-40 shrink-0 text-sm font-medium text-content-primary group-hover:underline">
-                  {page.label}
+                {platform.short}
+              </span>
+              {platform.label}
+            </span>
+          );
+        })}
+      </div>
+    </section>
+
+    <div className="mx-auto w-full max-w-6xl space-y-24 px-4 py-20 sm:px-6 lg:px-8">
+      {/* How it works */}
+      <section aria-labelledby="how-heading">
+        <SectionHeading
+          id="how-heading"
+          eyebrow="How it works"
+          title="From solve history to your next problem"
+          body="No guessing which topic to grind. Three steps, all from data you already have."
+        />
+        <ol className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3">
+          {HOW_IT_WORKS.map((step, index) => (
+            <li key={step.title} className="glass card-hover p-6">
+              <p className="grid h-10 w-10 place-items-center rounded-xl bg-brand-500/10 font-mono text-sm font-bold text-brand-300">
+                {index + 1}
+              </p>
+              <h3 className="mt-4 text-lg font-semibold text-content-primary">{step.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-content-secondary">{step.body}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* Example output */}
+      <section
+        aria-labelledby="example-heading"
+        className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]"
+      >
+        <div>
+          <p className="eyebrow">Practice next</p>
+          <h2 id="example-heading" className="mt-2 text-3xl font-bold tracking-tight text-content-primary">
+            Every pick comes with a reason
+          </h2>
+          <p className="mt-3 leading-relaxed text-content-secondary">
+            You see why a problem was chosen: which weak topic it trains, how many you have solved
+            there and how long ago. Problems you already solved are skipped.
+          </p>
+          <ul className="mt-6 space-y-2.5 text-sm text-content-secondary">
+            {[
+              'Rated 100–200 above your current level',
+              'Topics match across Codeforces and LeetCode',
+              'No account needed to try it',
+            ].map((point) => (
+              <li key={point} className="flex items-center gap-2.5">
+                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand-500/15 text-brand-300">
+                  <Check size={12} strokeWidth={3} aria-hidden="true" />
                 </span>
-                <span className="flex-1 text-sm text-content-secondary">{page.body}</span>
-                {page.requiresAuth ? (
-                  <Lock size={12} className="shrink-0 text-content-muted" aria-label="Needs an account" />
-                ) : null}
+                {point}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <ExamplePanel />
+      </section>
+
+      {/* Everything else */}
+      <section aria-labelledby="also-heading">
+        <SectionHeading
+          id="also-heading"
+          eyebrow="Also in CodeHub"
+          title="One place for your whole CP routine"
+        />
+        <ul className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {OTHER_PAGES.map((page) => (
+            <li key={page.to} className="min-w-0">
+              <Link to={page.to} className="glass card-hover focus-ring group flex h-full flex-col p-6">
+                <span className="flex items-center justify-between">
+                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-brand-500/10 text-brand-300">
+                    <page.icon size={18} aria-hidden="true" />
+                  </span>
+                  {page.requiresAuth ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-surface-inset px-2 py-0.5 text-[11px] text-content-muted">
+                      <Lock size={10} aria-hidden="true" />
+                      Account
+                    </span>
+                  ) : null}
+                </span>
+                <span className="mt-4 text-base font-semibold text-content-primary">{page.label}</span>
+                <span className="mt-1.5 flex-1 text-sm leading-relaxed text-content-secondary">{page.body}</span>
+                <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-brand-300">
+                  Open
+                  <ArrowRight
+                    size={14}
+                    className="transition-transform group-hover:translate-x-0.5"
+                    aria-hidden="true"
+                  />
+                </span>
               </Link>
             </li>
           ))}
+          <li className="glass min-w-0 p-6 sm:col-span-2 lg:col-span-1">
+            <UpcomingContests />
+          </li>
         </ul>
       </section>
 
-      <UpcomingContests />
+      {/* Closing call to action */}
+      <section className="overflow-hidden rounded-3xl bg-[#18181b] px-6 py-14 text-center sm:px-12">
+        <h2 className="text-balance text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          Stop guessing what to practise.
+        </h2>
+        <p className="mx-auto mt-3 max-w-xl text-zinc-300">
+          Save your usernames, bookmark problems and get contest reminders by email.
+        </p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <Button as={Link} to="/register" size="lg" iconRight={ArrowRight}>
+            Create a free account
+          </Button>
+          <Button
+            as={Link}
+            to="/login"
+            size="lg"
+            variant="outline"
+            className="border-zinc-600 text-white hover:bg-white/10"
+          >
+            Sign in
+          </Button>
+        </div>
+      </section>
     </div>
   </>
 );
@@ -304,8 +432,10 @@ const SetupList = ({ steps }) => {
           <li key={step.title} className="flex items-center gap-3 py-2.5">
             <span
               className={cn(
-                'grid h-4 w-4 shrink-0 place-items-center rounded-[4px] border',
-                step.done ? 'border-brand-600 bg-brand-600 text-white' : 'border-edge-strong',
+                'grid h-5 w-5 shrink-0 place-items-center rounded-full border',
+                step.done
+                  ? 'border-state-success bg-state-success text-white'
+                  : 'border-edge-strong bg-surface-raised',
               )}
               aria-hidden="true"
             >
@@ -314,7 +444,7 @@ const SetupList = ({ steps }) => {
             <span
               className={cn(
                 'flex-1 text-sm',
-                step.done ? 'text-content-muted line-through' : 'text-content-primary',
+                step.done ? 'text-content-secondary' : 'text-content-primary',
               )}
             >
               {step.title}
@@ -433,6 +563,7 @@ const SignedInHome = ({ user }) => {
       done: Boolean(user.publicProfile?.enabled),
       title: 'Turn on your public profile (optional)',
       to: '/settings#sharing',
+    icon: Share2,
       action: 'Turn on',
     },
   ];
@@ -475,9 +606,13 @@ export const LandingPage = () => {
 
   return (
     <PageTransition>
-      <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-        {isAuthenticated && user ? <SignedInHome user={user} /> : <GuestHome />}
-      </section>
+      {isAuthenticated && user ? (
+        <section className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+          <SignedInHome user={user} />
+        </section>
+      ) : (
+        <GuestHome />
+      )}
     </PageTransition>
   );
 };

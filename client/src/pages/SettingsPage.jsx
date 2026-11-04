@@ -424,7 +424,7 @@ export const SettingsPage = () => {
 
                     <div className="grid gap-4 sm:grid-cols-2">
                       <Select
-                        label="Card theme"
+                        label="Link preview style"
                         value={publicProfile.cardTheme}
                         onChange={(event) =>
                           savePreference({ publicProfile: { cardTheme: event.target.value } })
@@ -436,6 +436,10 @@ export const SettingsPage = () => {
                           </option>
                         ))}
                       </Select>
+                      <p className="self-end pb-2 text-xs leading-relaxed text-content-muted sm:col-span-1">
+                        The image LinkedIn and X show when you post your profile link. Your card
+                        page follows the site&apos;s light or dark theme.
+                      </p>
                     </div>
 
                     <Switch

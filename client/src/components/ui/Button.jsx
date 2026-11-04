@@ -5,9 +5,9 @@ import cn from '../../utils/cn.js';
 
 const VARIANTS = {
   primary:
-    'bg-brand-600 text-white border-brand-700/40 hover:bg-brand-700 active:bg-brand-800',
+    'bg-brand-600 text-white border-transparent shadow-card hover:bg-brand-700 hover:shadow-lift active:bg-brand-800',
   secondary:
-    'bg-surface-raised text-content-primary border-edge-strong hover:bg-surface-inset',
+    'bg-surface-raised text-content-primary border-edge shadow-card hover:border-edge-strong hover:bg-surface-inset',
   outline:
     'bg-transparent text-content-primary border-edge-strong hover:bg-surface-inset',
   ghost:
@@ -19,11 +19,11 @@ const VARIANTS = {
 };
 
 const SIZES = {
-  xs: 'h-7 px-2.5 text-xs gap-1.5 rounded-md',
-  sm: 'h-9 px-3.5 text-sm gap-2 rounded-lg',
-  md: 'h-10 px-4 text-sm gap-2 rounded-lg',
-  lg: 'h-11 px-5 text-base gap-2 rounded-lg',
-  icon: 'h-9 w-9 rounded-lg',
+  xs: 'h-7 px-2.5 text-xs gap-1.5 rounded-lg',
+  sm: 'h-9 px-3.5 text-sm gap-2 rounded-xl',
+  md: 'h-10 px-4 text-sm gap-2 rounded-xl',
+  lg: 'h-11 px-5 text-base gap-2 rounded-xl',
+  icon: 'h-9 w-9 rounded-xl',
 };
 
 /**

@@ -61,7 +61,7 @@ export const ProgressRing = ({
   thickness = 8,
   label,
   sublabel,
-  color = '#2b9a5c',
+  color = '#f97316',
   trackColor = 'rgb(var(--surface-inset))',
   className,
 }) => {
